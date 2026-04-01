@@ -23,14 +23,14 @@ class DoctorDetailsError extends DoctorDetailsState {
 // Cubit
 
 class DoctorDetailsCubit extends Cubit<DoctorDetailsState> {
-  final UserService _doctorService;
+  final UserService _userService;
 
-  DoctorDetailsCubit(this._doctorService) : super(DoctorDetailsInitial());
+  DoctorDetailsCubit(this._userService) : super(DoctorDetailsInitial());
 
   Future<void> loadDoctor(String doctorId) async {
     emit(DoctorDetailsLoading());
     try {
-      final doctor = await _doctorService.getDoctorById(doctorId);
+      final doctor = await _userService.getDoctorById(doctorId);
       emit(DoctorDetailsLoaded(doctor));
     } on DioException catch (e) {
       emit(DoctorDetailsError(e.message ?? 'فشل تحميل البيانات'));

@@ -1,7 +1,9 @@
 // ignore_for_file: deprecated_member_use
 
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:healthcareapp_try1/API/user_service.dart';
 import 'package:healthcareapp_try1/Models/Users_Models/doctor_model.dart';
 import 'package:healthcareapp_try1/Models/Users_Models/lab_model.dart';
 import 'package:healthcareapp_try1/Models/Users_Models/nurse_model.dart';
@@ -129,11 +131,14 @@ class _DoctorCard extends State<DoctorCard>
               width: double.infinity,
               child: ElevatedButton(
                 onPressed: () {
+                  final userService = context.read<UserService>();
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (_) =>
-                          DoctorDetailsPage(doctorId: widget.doctor.id),
+                      builder: (_) => DoctorDetailsPage(
+                        doctorId: widget.doctor.id,
+                        doctorService: userService,
+                      ),
                     ),
                   );
                 },
