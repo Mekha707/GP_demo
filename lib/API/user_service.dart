@@ -2,9 +2,12 @@
 // import 'package:healthcareapp_try1/Models/Logic/paginated_list.dart';
 // import 'package:healthcareapp_try1/Models/Users_Models/doctor_model.dart';
 
+import 'dart:developer';
+
 import 'package:dio/dio.dart';
 import 'package:healthcareapp_try1/API/details_service.dart';
 import 'package:healthcareapp_try1/Models/DetailsModel.dart/doctor_details_model.dart';
+import 'package:healthcareapp_try1/Models/DetailsModel.dart/review_model.dart';
 import 'package:healthcareapp_try1/Models/Logic/paginated_list.dart';
 import 'package:healthcareapp_try1/Models/Users_Models/doctor_model.dart';
 import 'package:healthcareapp_try1/Models/Users_Models/nurse_model.dart';
@@ -175,5 +178,31 @@ class UserService {
     return (response.data as List)
         .map((json) => Specialty.fromJson(json))
         .toList();
+  }
+
+  Future<PaginatedList<ReviewModel>> getDoctorReviews(
+    String doctorId, {
+    int page = 1,
+  }) async {
+    try {
+      final response = await _dio.get(
+        'api/Reviews', // تأكدي أن هذا هو المسار الصحيح بدون / في البداية إذا كان الـ BaseUrl ينتهي بـ /
+        queryParameters: {
+          'TargetId': doctorId, // تغيير الاسم ليتطابق مع الـ API Request
+          'TargetType':
+              'Doctor', // أو القيمة المطلوبة في الـ API (مثل "1" أو "Doctor")
+          'pageNumber': page,
+          'pageSize': 10,
+        },
+      );
+
+      return PaginatedList<ReviewModel>.fromJson(
+        response.data,
+        (itemJson) => ReviewModel.fromJson(itemJson),
+      );
+    } on DioException catch (e) {
+      log("Dio Error: ${e.response?.statusCode} - ${e.response?.data}");
+      throw "فشل تحميل التقييمات";
+    }
   }
 }
