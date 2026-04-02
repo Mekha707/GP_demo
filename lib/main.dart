@@ -62,7 +62,9 @@ void main() async {
               SpecialtyBloc(UserService())..add(LoadSpecialties()),
         ),
         BlocProvider(create: (context) => CitiesCubit(authService)),
-        BlocProvider(create: (context) => DoctorDetailsCubit(UserService())),
+        BlocProvider(
+          create: (context) => HealthcareDetailsCubit(UserService()),
+        ),
         RepositoryProvider<UserService>(create: (_) => UserService()),
       ],
       child: MainApp(isLoggedIn: isLoggedIn),

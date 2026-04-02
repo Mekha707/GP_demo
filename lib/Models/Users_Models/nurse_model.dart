@@ -1,12 +1,30 @@
-class Nurse {
+// ignore_for_file: override_on_non_overriding_member
+
+import 'package:healthcareapp_try1/Pages/Booking/healtcare_provider.dart';
+
+class Nurse extends HealthcareProvider {
+  @override
   final String id;
+  @override
   final String name;
   final String city;
   final double visitFee;
   final double hourPrice;
+  @override
   final double rating;
+  @override
   final int ratingsCount;
+  @override
   final String profilePictureUrl;
+
+  @override
+  String get subTitle => "Nursing Services";
+  @override
+  String get location => city;
+  @override
+  double get mainFee => visitFee;
+  @override
+  String get providerType => "Nurse";
 
   Nurse({
     required this.id,

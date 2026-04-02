@@ -1,9 +1,16 @@
-class LabModel {
+import 'package:healthcareapp_try1/Pages/Booking/healtcare_provider.dart';
+
+class LabModel extends HealthcareProvider {
+  @override
   final String id;
+  @override
   final String name;
   final String address;
+  @override
   final double rating;
+  @override
   final int ratingsCount;
+  @override
   final String profilePictureUrl;
 
   LabModel({
@@ -25,4 +32,16 @@ class LabModel {
       profilePictureUrl: json['profilePictureUrl'],
     );
   }
+
+  @override
+  String get location => address;
+
+  @override
+  double get mainFee => 0.0;
+
+  @override
+  String get providerType => "Lab";
+
+  @override
+  String get subTitle => "";
 }

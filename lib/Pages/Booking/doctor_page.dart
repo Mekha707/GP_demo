@@ -8,6 +8,7 @@ import 'package:healthcareapp_try1/Bloc/User_Bloc/DoctorBloc/doctor_state.dart';
 import 'package:healthcareapp_try1/Buttons/buttons.dart';
 import 'package:healthcareapp_try1/Buttons/filter_button.dart';
 import 'package:healthcareapp_try1/Models/Users_Models/enums.dart';
+import 'package:healthcareapp_try1/Pages/Booking/healtcare_provider.dart';
 import 'package:healthcareapp_try1/Widgets/custom_loader1.dart';
 import 'package:healthcareapp_try1/Widgets/medical_staff_cards.dart';
 import 'package:healthcareapp_try1/Widgets/search_for_medical_staff.dart';
@@ -53,7 +54,7 @@ class _DoctorPage extends State<DoctorPage> {
       builder: (context, state) {
         if (state is DoctorsLoading) {
           return const Center(
-            child: CustomSpinner(size: 40, color: Color(0xff0861dd)),
+            child: CustomSpinner(size: 40, color: Color(0xff131ab9)),
           );
         }
 
@@ -67,7 +68,7 @@ class _DoctorPage extends State<DoctorPage> {
                   style: TextStyle(
                     fontSize: 16,
                     fontFamily: 'ElMessiri',
-                    color: Color(0xff0861dd),
+                    color: Color(0xff131ab9),
                   ),
                 ),
                 const SizedBox(height: 12),
@@ -76,7 +77,7 @@ class _DoctorPage extends State<DoctorPage> {
                   onPressed: () =>
                       context.read<DoctorsBloc>().add(FetchDoctors()),
                   fontcolor: Colors.grey.shade100,
-                  buttoncolor: Color(0xff0861dd),
+                  buttoncolor: Color(0xff131ab9),
                   buttonText: "Try Again",
                 ),
               ],
@@ -99,7 +100,7 @@ class _DoctorPage extends State<DoctorPage> {
                       isFilterd = !isFilterd;
                     });
                   },
-                  activeColor: Color(0xff0861dd),
+                  activeColor: Color(0xff131ab9),
                 ),
 
                 SliverAnimatedOpacity(
@@ -139,13 +140,18 @@ class _DoctorPage extends State<DoctorPage> {
                               return const Center(
                                 child: Padding(
                                   padding: EdgeInsets.all(16),
-                                  child: CircularProgressIndicator(),
+                                  child: CustomSpinner(
+                                    size: 40,
+                                    color: Color(0xff131ab9),
+                                  ),
                                 ),
                               );
                             }
                             final doctor = state.filteredDoctors[index];
 
-                            return DoctorCard(doctor: doctor);
+                            return UniversalMedicalCard(
+                              provider: doctor as HealthcareProvider,
+                            );
                           },
                           childCount:
                               state.filteredDoctors.length +

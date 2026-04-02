@@ -1,40 +1,31 @@
 // ignore_for_file: deprecated_member_use
 
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:healthcareapp_try1/API/user_service.dart';
 import 'package:healthcareapp_try1/Models/Users_Models/doctor_model.dart';
 import 'package:healthcareapp_try1/Models/Users_Models/lab_model.dart';
 import 'package:healthcareapp_try1/Models/Users_Models/nurse_model.dart';
 import 'package:healthcareapp_try1/Pages/Booking/doctor_details_page.dart';
+import 'package:healthcareapp_try1/Pages/Booking/healtcare_provider.dart';
 
-class DoctorCard extends StatefulWidget {
-  final Doctor doctor;
+class UniversalMedicalCard extends StatefulWidget {
+  final HealthcareProvider provider;
 
-  const DoctorCard({super.key, required this.doctor});
+  const UniversalMedicalCard({super.key, required this.provider});
 
   @override
-  State<DoctorCard> createState() => _DoctorCard();
+  State<UniversalMedicalCard> createState() => _UniversalMedicalCardState();
 }
 
-class _DoctorCard extends State<DoctorCard>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-
+class _UniversalMedicalCardState extends State<UniversalMedicalCard> {
+  Color color = Color(0xff131ab9);
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 3),
-    )..repeat();
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
+    widget.provider.providerType == "Nurse"
+        ? color = Color(0xff0082c5)
+        : widget.provider.providerType == "Lab"
+        ? color = Colors.teal
+        : color = Color(0xff131ab9);
   }
 
   @override
@@ -42,12 +33,19 @@ class _DoctorCard extends State<DoctorCard>
     final screenWidth = MediaQuery.of(context).size.width;
     final cardWidth = screenWidth > 600 ? 350.0 : screenWidth * 0.85;
 
+    // تحديد نوع المزود
+    final isDoctor = widget.provider is Doctor;
+    final isLab = widget.provider is LabModel;
+
     return Container(
       width: cardWidth,
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(color: Colors.black12, blurRadius: 8, offset: Offset(0, 2)),
+        ],
       ),
       child: Padding(
         padding: const EdgeInsets.all(12),
@@ -57,66 +55,45 @@ class _DoctorCard extends State<DoctorCard>
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildStaffImage(),
+                _buildProviderImage(),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       _buildNameAndFavorite(),
-                      Text(
-                        widget.doctor.specialty,
-                        style: TextStyle(
-                          color: Colors.grey[600],
-                          fontSize: 13,
-                          fontFamily: 'Agency',
+
+                      // عرض التخصص للدكاترة أو وصف قصير للمعمل
+                      if (isDoctor)
+                        Text(
+                          (widget.provider as Doctor).specialty,
+                          style: TextStyle(
+                            color: Colors.grey[600],
+                            fontSize: 13,
+                            fontFamily: 'Agency',
+                          ),
+                        )
+                      else if (isLab)
+                        const Text(
+                          "Medical Laboratory", // أو أي حقل من LabModel
+                          style: TextStyle(
+                            color: Colors.teal,
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
-                      ),
+
                       const SizedBox(height: 4),
-                      Row(
-                        children: [
-                          const Icon(
-                            Icons.location_on_outlined,
-                            size: 13,
-                            color: Colors.grey,
-                          ),
-                          const SizedBox(width: 3),
-                          Expanded(
-                            child: Text(
-                              widget.doctor.address,
-                              style: TextStyle(
-                                color: Colors.grey.shade600,
-                                fontSize: 11,
-                                fontFamily: 'Agency',
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ],
-                      ),
+                      _buildLocationRow(),
                       const SizedBox(height: 6),
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.work_history_outlined,
-                            size: 16,
-                            color: Colors.blue[700],
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            "EGP ${widget.doctor.fee.toStringAsFixed(0)} / session",
-                            style: const TextStyle(
-                              color: Colors.green,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 12,
-                              fontFamily: 'Agency',
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 6),
-                      _buildServiceBadges(),
+
+                      // عرض السعر (موجود في الأب)
+                      _buildPriceRow(),
+
+                      if (isDoctor) ...[
+                        const SizedBox(height: 6),
+                        _buildDoctorBadges(widget.provider as Doctor),
+                      ],
                     ],
                   ),
                 ),
@@ -127,58 +104,105 @@ class _DoctorCard extends State<DoctorCard>
             const SizedBox(height: 8),
             const Divider(height: 1, thickness: 0.5),
             const SizedBox(height: 8),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () {
-                  final userService = context.read<UserService>();
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => DoctorDetailsPage(
-                        doctorId: widget.doctor.id,
-                        doctorService: userService,
-                      ),
-                    ),
-                  );
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xff0861dd),
-                  foregroundColor: Colors.white,
-                  elevation: 0,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 0,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  minimumSize: const Size(100, 35),
-                ),
-                child: const Padding(
-                  padding: EdgeInsets.only(top: 4),
-                  child: Text(
-                    "View Details",
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                      fontFamily: 'Agency',
-                    ),
-                  ),
-                ),
-              ),
-            ),
+            _buildActionButton(),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildStaffImage() {
+  // --- Widgets مساعدة ---
+
+  Widget _buildLocationRow() {
+    // نستخدم address من الأب أو نتحقق من النوع
+    String address = "";
+    if (widget.provider is Doctor) {
+      address = (widget.provider as Doctor).address;
+      // ignore: dead_code
+    } else if (widget.provider is LabModel) {
+      address = (widget.provider as LabModel).address;
+    } else if (widget.provider is Nurse) {
+      address = (widget.provider as Nurse).city;
+    }
+
+    return Row(
+      children: [
+        const Icon(Icons.location_on_outlined, size: 13, color: Colors.grey),
+        const SizedBox(width: 3),
+        Expanded(
+          child: Text(
+            address,
+            style: TextStyle(
+              color: Colors.grey.shade600,
+              fontSize: 11,
+              fontFamily: 'Agency',
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildPriceRow() {
+    return Row(
+      children: [
+        if (widget.provider is Nurse || widget.provider is Doctor) ...[
+          Icon(Icons.work_history_outlined, size: 16, color: Colors.blue[700]),
+          const SizedBox(width: 4),
+          Text(
+            "EGP ${widget.provider.mainFee.toStringAsFixed(0)} / session",
+            style: const TextStyle(
+              color: Colors.green,
+              fontWeight: FontWeight.bold,
+              fontSize: 12,
+              fontFamily: 'Agency',
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildActionButton() {
+    return SizedBox(
+      width: double.infinity,
+      child: ElevatedButton(
+        onPressed: () {
+          // الانتقال لصفحة التفاصيل الموحدة
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => ProviderDetailsPage(provider: widget.provider),
+            ),
+          );
+        },
+        style: ElevatedButton.styleFrom(
+          backgroundColor: color,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+        ),
+        child: const Text(
+          "View Details",
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 12,
+            fontWeight: FontWeight.bold,
+            fontFamily: 'Agency',
+          ),
+        ),
+      ),
+    );
+  }
+
+  // 1. دالة بناء صورة المزود (تعمل مع الكل)
+  Widget _buildProviderImage() {
     return ClipRRect(
       borderRadius: BorderRadius.circular(15),
       child: Image.network(
-        widget.doctor.profilePictureUrl,
+        widget.provider.profilePictureUrl, // خاصية من الأب
         width: 75,
         height: 75,
         fit: BoxFit.cover,
@@ -203,13 +227,14 @@ class _DoctorCard extends State<DoctorCard>
     );
   }
 
+  // 2. دالة بناء الاسم وأيقونة المفضلة
   Widget _buildNameAndFavorite() {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Expanded(
           child: Text(
-            widget.doctor.name,
+            widget.provider.name, // خاصية من الأب
             style: const TextStyle(
               fontWeight: FontWeight.bold,
               fontSize: 15,
@@ -219,20 +244,24 @@ class _DoctorCard extends State<DoctorCard>
             overflow: TextOverflow.ellipsis,
           ),
         ),
+        // يمكنك لاحقاً ربط هذه الأيقونة بحالة المفضلة في الـ Database
         const Icon(Icons.favorite_border, color: Colors.red, size: 18),
       ],
     );
   }
 
+  // 3. دالة بناء نظام النجوم والتقييم
   Widget _buildRatingRow() {
     return Row(
       children: [
         ...List.generate(5, (i) {
-          final full = i < widget.doctor.rating.floor();
+          // حساب النجوم بناءً على الرقم العشري (مثلاً 4.5)
+          final full = i < widget.provider.rating.floor();
           final half =
               !full &&
-              i < widget.doctor.rating &&
-              (widget.doctor.rating - i) >= 0.5;
+              i < widget.provider.rating &&
+              (widget.provider.rating - i) >= 0.5;
+
           return Icon(
             full
                 ? Icons.star
@@ -245,7 +274,7 @@ class _DoctorCard extends State<DoctorCard>
         }),
         const SizedBox(width: 4),
         Text(
-          "${widget.doctor.rating.toStringAsFixed(1)} (${widget.doctor.ratingsCount})",
+          "${widget.provider.rating.toStringAsFixed(1)} (${widget.provider.ratingsCount})",
           style: const TextStyle(
             fontSize: 11,
             color: Colors.grey,
@@ -256,17 +285,7 @@ class _DoctorCard extends State<DoctorCard>
     );
   }
 
-  Widget _buildServiceBadges() {
-    return Row(
-      children: [
-        if (widget.doctor.allowHome) _badge("🏠 Home", Colors.orange),
-        if (widget.doctor.allowHome && widget.doctor.allowOnline)
-          const SizedBox(width: 6),
-        if (widget.doctor.allowOnline) _badge("💻 Online", Colors.teal),
-      ],
-    );
-  }
-
+  // 4. دالة بناء الشارات (Badges) - مخصصة للدكتور أو يمكن تعميمها
   Widget _badge(String label, Color color) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
@@ -286,457 +305,14 @@ class _DoctorCard extends State<DoctorCard>
       ),
     );
   }
-}
 
-class NurseCard extends StatefulWidget {
-  final Nurse nurse;
-
-  const NurseCard({super.key, required this.nurse});
-
-  @override
-  State<NurseCard> createState() => _NurseCard();
-}
-
-class _NurseCard extends State<NurseCard> with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 3),
-    )..repeat();
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final screenWidth = MediaQuery.of(context).size.width;
-    final cardWidth = screenWidth > 600 ? 350.0 : screenWidth * 0.85;
-
-    return Container(
-      width: cardWidth,
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildStaffImage(),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _buildNameAndFavorite(),
-                      const SizedBox(height: 4),
-                      Row(
-                        children: [
-                          const Icon(
-                            Icons.location_on_outlined,
-                            size: 13,
-                            color: Colors.grey,
-                          ),
-                          const SizedBox(width: 3),
-                          Expanded(
-                            child: Text(
-                              widget.nurse.city,
-                              style: TextStyle(
-                                color: Colors.grey.shade600,
-                                fontSize: 11,
-                                fontFamily: 'Agency',
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 6),
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.work_history_outlined,
-                            size: 16,
-                            color: Colors.blue[700],
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            "EGP ${widget.nurse.visitFee.toStringAsFixed(0)} / session",
-                            style: const TextStyle(
-                              color: Colors.green,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 12,
-                              fontFamily: 'Agency',
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 6),
-
-                      Row(
-                        children: [
-                          Icon(
-                            FontAwesomeIcons.clock,
-                            size: 16,
-                            color: Colors.blue[700],
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            "EGP ${widget.nurse.hourPrice.toStringAsFixed(0)} / session",
-                            style: const TextStyle(
-                              color: Colors.green,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 12,
-                              fontFamily: 'Agency',
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 10),
-            _buildRatingRow(),
-            const SizedBox(height: 8),
-            const Divider(height: 1, thickness: 0.5),
-            const SizedBox(height: 8),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () {},
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xff0861dd),
-                  foregroundColor: Colors.white,
-                  elevation: 0,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 0,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  minimumSize: const Size(100, 35),
-                ),
-                child: const Padding(
-                  padding: EdgeInsets.only(top: 4),
-                  child: Text(
-                    "View Details",
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                      fontFamily: 'Agency',
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildStaffImage() {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(15),
-      child: Image.network(
-        widget.nurse.profilePictureUrl,
-        width: 75,
-        height: 75,
-        fit: BoxFit.cover,
-        errorBuilder: (context, error, stackTrace) => Container(
-          width: 75,
-          height: 75,
-          color: Colors.blue.shade50,
-          child: const Icon(Icons.person, color: Colors.blue),
-        ),
-        loadingBuilder: (context, child, loadingProgress) {
-          if (loadingProgress == null) return child;
-          return Container(
-            width: 75,
-            height: 75,
-            color: Colors.blue.shade50,
-            child: const Center(
-              child: CircularProgressIndicator(strokeWidth: 2),
-            ),
-          );
-        },
-      ),
-    );
-  }
-
-  Widget _buildNameAndFavorite() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Expanded(
-          child: Text(
-            widget.nurse.name,
-            style: const TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 15,
-              fontFamily: 'Cotta',
-            ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-        ),
-        const Icon(Icons.favorite_border, color: Colors.red, size: 18),
-      ],
-    );
-  }
-
-  Widget _buildRatingRow() {
+  // 5. دالة إضافية لعرض شارات الدكتور (Home / Online)
+  Widget _buildDoctorBadges(Doctor doctor) {
     return Row(
       children: [
-        ...List.generate(5, (i) {
-          final full = i < widget.nurse.rating.floor();
-          final half =
-              !full &&
-              i < widget.nurse.rating &&
-              (widget.nurse.rating - i) >= 0.5;
-          return Icon(
-            full
-                ? Icons.star
-                : half
-                ? Icons.star_half
-                : Icons.star_border,
-            size: 16,
-            color: Colors.amber,
-          );
-        }),
-        const SizedBox(width: 4),
-        Text(
-          "${widget.nurse.rating.toStringAsFixed(1)} (${widget.nurse.ratingsCount})",
-          style: const TextStyle(
-            fontSize: 11,
-            color: Colors.grey,
-            fontFamily: 'Agency',
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class LabCard extends StatefulWidget {
-  final LabModel labModel;
-
-  const LabCard({super.key, required this.labModel});
-
-  @override
-  State<LabCard> createState() => _LabCard();
-}
-
-class _LabCard extends State<LabCard> with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 3),
-    )..repeat();
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final screenWidth = MediaQuery.of(context).size.width;
-    final cardWidth = screenWidth > 600 ? 350.0 : screenWidth * 0.85;
-
-    return Container(
-      width: cardWidth,
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildStaffImage(),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _buildNameAndFavorite(),
-                      const SizedBox(height: 4),
-                      Row(
-                        children: [
-                          const Icon(
-                            Icons.location_on_outlined,
-                            size: 13,
-                            color: Colors.grey,
-                          ),
-                          const SizedBox(width: 3),
-                          Expanded(
-                            child: Text(
-                              widget.labModel.address,
-                              style: TextStyle(
-                                color: Colors.grey.shade600,
-                                fontSize: 11,
-                                fontFamily: 'Agency',
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 6),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 10),
-            _buildRatingRow(),
-            const SizedBox(height: 8),
-            const Divider(height: 1, thickness: 0.5),
-            const SizedBox(height: 8),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () {},
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xff0861dd),
-                  foregroundColor: Colors.white,
-                  elevation: 0,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 0,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  minimumSize: const Size(100, 35),
-                ),
-                child: const Padding(
-                  padding: EdgeInsets.only(top: 4),
-                  child: Text(
-                    "View Details",
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                      fontFamily: 'Agency',
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildStaffImage() {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(15),
-      child: Image.network(
-        widget.labModel.profilePictureUrl,
-        width: 75,
-        height: 75,
-        fit: BoxFit.cover,
-        errorBuilder: (context, error, stackTrace) => Container(
-          width: 75,
-          height: 75,
-          color: Colors.blue.shade50,
-          child: const Icon(Icons.person, color: Colors.blue),
-        ),
-        loadingBuilder: (context, child, loadingProgress) {
-          if (loadingProgress == null) return child;
-          return Container(
-            width: 75,
-            height: 75,
-            color: Colors.blue.shade50,
-            child: const Center(
-              child: CircularProgressIndicator(strokeWidth: 2),
-            ),
-          );
-        },
-      ),
-    );
-  }
-
-  Widget _buildNameAndFavorite() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Expanded(
-          child: Text(
-            widget.labModel.name,
-            style: const TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 15,
-              fontFamily: 'Cotta',
-            ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-        ),
-        const Icon(Icons.favorite_border, color: Colors.red, size: 18),
-      ],
-    );
-  }
-
-  Widget _buildRatingRow() {
-    return Row(
-      children: [
-        ...List.generate(5, (i) {
-          final full = i < widget.labModel.rating.floor();
-          final half =
-              !full &&
-              i < widget.labModel.rating &&
-              (widget.labModel.rating - i) >= 0.5;
-          return Icon(
-            full
-                ? Icons.star
-                : half
-                ? Icons.star_half
-                : Icons.star_border,
-            size: 16,
-            color: Colors.amber,
-          );
-        }),
-        const SizedBox(width: 4),
-        Text(
-          "${widget.labModel.rating.toStringAsFixed(1)} (${widget.labModel.ratingsCount})",
-          style: const TextStyle(
-            fontSize: 11,
-            color: Colors.grey,
-            fontFamily: 'Agency',
-          ),
-        ),
+        if (doctor.allowHome) _badge("🏠 Home", Colors.orange),
+        if (doctor.allowHome && doctor.allowOnline) const SizedBox(width: 6),
+        if (doctor.allowOnline) _badge("💻 Online", Colors.pinkAccent),
       ],
     );
   }

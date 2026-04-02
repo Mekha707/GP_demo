@@ -131,6 +131,7 @@ import 'package:healthcareapp_try1/Bloc/User_Bloc/LabBloc/lab_state.dart';
 import 'package:healthcareapp_try1/Buttons/buttons.dart';
 import 'package:healthcareapp_try1/Buttons/filter_button.dart';
 import 'package:healthcareapp_try1/Models/Users_Models/enums.dart';
+import 'package:healthcareapp_try1/Pages/Booking/healtcare_provider.dart';
 import 'package:healthcareapp_try1/Widgets/custom_loader1.dart';
 import 'package:healthcareapp_try1/Widgets/medical_staff_cards.dart';
 import 'package:healthcareapp_try1/Widgets/search_for_medical_staff.dart';
@@ -263,7 +264,9 @@ class _LabPageState extends State<LabPage> {
                               );
                             }
                             final lab = state.filteredLabs[index];
-                            return LabCard(labModel: lab);
+                            return UniversalMedicalCard(
+                              provider: lab as HealthcareProvider,
+                            );
                           },
                           childCount:
                               state.filteredLabs.length +

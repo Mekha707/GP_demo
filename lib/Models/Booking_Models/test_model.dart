@@ -1,25 +1,28 @@
-class TestModel {
+class Test {
   final String id;
   final String name;
-  final String? description;
-  final String? unit; // الوحدة القياسية للنتيجة (مثلاً mg/dL)
-  final String? prerequisites; // الشروط (مثلاً "صيام 12 ساعة")
+  final String description;
+  final String preRequisites;
+  final double price;
+  final bool isAvailableAtHome;
 
-  TestModel({
+  Test({
     required this.id,
     required this.name,
-    this.description,
-    this.unit,
-    this.prerequisites,
+    required this.description,
+    required this.preRequisites,
+    required this.price,
+    required this.isAvailableAtHome,
   });
 
-  factory TestModel.fromJson(Map<String, dynamic> json) {
-    return TestModel(
-      id: json['Id'],
-      name: json['Name'] ?? '',
-      description: json['Description'],
-      unit: json['Unit'],
-      prerequisites: json['Prerequisites'],
+  factory Test.fromJson(Map<String, dynamic> json) {
+    return Test(
+      id: json['id'],
+      name: json['name'],
+      description: json['description'],
+      preRequisites: json['preRequisites'],
+      price: (json['price'] as num).toDouble(),
+      isAvailableAtHome: json['isAvailableAtHome'],
     );
   }
 }

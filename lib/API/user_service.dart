@@ -7,6 +7,8 @@ import 'dart:developer';
 import 'package:dio/dio.dart';
 import 'package:healthcareapp_try1/API/details_service.dart';
 import 'package:healthcareapp_try1/Models/DetailsModel.dart/doctor_details_model.dart';
+import 'package:healthcareapp_try1/Models/DetailsModel.dart/lab_details_model.dart';
+import 'package:healthcareapp_try1/Models/DetailsModel.dart/nurse_details_model.dart';
 import 'package:healthcareapp_try1/Models/DetailsModel.dart/review_model.dart';
 import 'package:healthcareapp_try1/Models/Logic/paginated_list.dart';
 import 'package:healthcareapp_try1/Models/Users_Models/doctor_model.dart';
@@ -101,14 +103,7 @@ class UserService {
       response.data as Map<String, dynamic>,
       DoctorDetailsModel.fromJson,
     );
-
-    if (apiResponse.isSuccess && apiResponse.value != null) {
-      return apiResponse.value!;
-    } else {
-      throw Exception(
-        apiResponse.error?.description ?? 'فشل تحميل بيانات الدكتور',
-      );
-    }
+    return handleResponse(apiResponse);
   }
 
   // --- Nurse Methods ---
@@ -138,6 +133,17 @@ class UserService {
     }
   }
 
+  Future<NurseDetailsModel> getNurseById(String nurseId) async {
+    final response = await _dio.get('api/nurses/$nurseId');
+
+    final apiResponse = DetailsService.fromJson(
+      response.data as Map<String, dynamic>,
+      NurseDetailsModel.fromJson,
+    );
+
+    return handleResponse(apiResponse);
+  }
+
   // --- Lab Methods ---
   Future<PaginatedList<LabModel>> getLabs({int page = 1}) async {
     try {
@@ -154,6 +160,17 @@ class UserService {
     }
   }
 
+  Future<LabDetailsModel> getLabById(String labId) async {
+    final response = await _dio.get('api/labs/$labId');
+
+    final apiResponse = DetailsService.fromJson(
+      response.data as Map<String, dynamic>,
+      LabDetailsModel.fromJson,
+    );
+
+    return handleResponse(apiResponse);
+  }
+
   // --- Error Handling (مكان واحد لكل الخدمات) ---
   Exception _handleError(DioException e) {
     switch (e.type) {
@@ -168,6 +185,14 @@ class UserService {
         return Exception('لا يوجد اتصال بالإنترنت');
       default:
         return Exception('حدث خطأ غير متوقع');
+    }
+  }
+
+  T handleResponse<T>(DetailsService<T> response) {
+    if (response.isSuccess && response.value != null) {
+      return response.value!;
+    } else {
+      throw Exception(response.error?.description ?? 'Unknown error');
     }
   }
 
@@ -191,6 +216,32 @@ class UserService {
           'TargetId': doctorId, // تغيير الاسم ليتطابق مع الـ API Request
           'TargetType':
               'Doctor', // أو القيمة المطلوبة في الـ API (مثل "1" أو "Doctor")
+          'pageNumber': page,
+          'pageSize': 10,
+        },
+      );
+
+      return PaginatedList<ReviewModel>.fromJson(
+        response.data,
+        (itemJson) => ReviewModel.fromJson(itemJson),
+      );
+    } on DioException catch (e) {
+      log("Dio Error: ${e.response?.statusCode} - ${e.response?.data}");
+      throw "فشل تحميل التقييمات";
+    }
+  }
+
+  Future<PaginatedList<ReviewModel>> getNurseReviews(
+    String nurseId, {
+    int page = 1,
+  }) async {
+    try {
+      final response = await _dio.get(
+        'Review/GetReviews', // تأكدي أن هذا هو المسار الصحيح بدون / في البداية إذا كان الـ BaseUrl ينتهي بـ /
+        queryParameters: {
+          'TargetId': nurseId, // تغيير الاسم ليتطابق مع الـ API Request
+          'TargetType':
+              'Nurse', // أو القيمة المطلوبة في الـ API (مثل "1" أو "Nurse")
           'pageNumber': page,
           'pageSize': 10,
         },

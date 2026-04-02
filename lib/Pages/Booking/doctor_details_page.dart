@@ -1,7 +1,5 @@
 // ignore_for_file: deprecated_member_use, unused_element, must_be_immutable
 
-import 'dart:developer';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -10,47 +8,48 @@ import 'package:healthcareapp_try1/Bloc/DetailsBoc/doctor_details_cubit.dart';
 import 'package:healthcareapp_try1/Bloc/User_Bloc/ReviewBloc/review_cubit.dart';
 import 'package:healthcareapp_try1/Buttons/buttons.dart';
 import 'package:healthcareapp_try1/Models/DetailsModel.dart/review_model.dart';
+import 'package:healthcareapp_try1/Models/Users_Models/doctor_model.dart';
+import 'package:healthcareapp_try1/Models/Users_Models/nurse_model.dart';
+import 'package:healthcareapp_try1/Pages/Booking/healtcare_provider.dart';
 import 'package:healthcareapp_try1/Widgets/custom_loader1.dart';
 import 'package:healthcareapp_try1/Widgets/location_open_map.dart';
 import 'package:healthcareapp_try1/Widgets/slot_widget.dart';
 import 'package:healthcareapp_try1/core/string_extension.dart';
 
-class DoctorDetailsPage extends StatelessWidget {
-  final String doctorId;
-  final UserService doctorService;
-  const DoctorDetailsPage({
-    super.key,
-    required this.doctorId,
-    required this.doctorService,
-  });
+class ProviderDetailsPage extends StatelessWidget {
+  final HealthcareProvider provider;
+
+  const ProviderDetailsPage({super.key, required this.provider});
 
   @override
   Widget build(BuildContext context) {
     return MultiBlocProvider(
-      // استبدال BlocProvider بـ MultiBlocProvider
       providers: [
         BlocProvider(
           create: (_) =>
-              DoctorDetailsCubit(context.read<UserService>())
-                ..loadDoctor(doctorId),
+              HealthcareDetailsCubit(context.read<UserService>())
+                ..loadProviderDetails(provider.id, provider.providerType),
         ),
         BlocProvider(
           create: (_) =>
               ReviewsCubit(context.read<UserService>())
-                ..fetchReviews(doctorId), // تشغيل جلب المراجعات فوراً
+                ..fetchReviews(provider.id), // تشغيل جلب المراجعات فوراً
         ),
       ],
-      child: _DoctorDetailsView(),
+      child: _ProviderDetailsView(provider: provider),
     );
   }
 }
 
-class _DoctorDetailsView extends StatefulWidget {
+class _ProviderDetailsView extends StatefulWidget {
+  final HealthcareProvider provider;
+  const _ProviderDetailsView({required this.provider});
+
   @override
-  State<_DoctorDetailsView> createState() => _DoctorDetailsViewState();
+  State<_ProviderDetailsView> createState() => _ProviderDetailsViewState();
 }
 
-class _DoctorDetailsViewState extends State<_DoctorDetailsView> {
+class _ProviderDetailsViewState extends State<_ProviderDetailsView> {
   DateTime? selectedDate;
 
   String? selectedTime;
@@ -96,15 +95,15 @@ class _DoctorDetailsViewState extends State<_DoctorDetailsView> {
         ),
       ),
 
-      body: BlocBuilder<DoctorDetailsCubit, DoctorDetailsState>(
+      body: BlocBuilder<HealthcareDetailsCubit, HealthcareDetailsState>(
         builder: (context, state) {
-          if (state is DoctorDetailsLoading) {
+          if (state is DetailsLoading) {
             return const Center(
               child: CustomSpinner(color: Color(0xff0861dd), size: 40),
             );
           }
 
-          if (state is DoctorDetailsError) {
+          if (state is DetailsError) {
             return Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -122,8 +121,8 @@ class _DoctorDetailsViewState extends State<_DoctorDetailsView> {
             );
           }
 
-          if (state is DoctorDetailsLoaded) {
-            // final doctor = state.doctor;
+          if (state is DetailsLoaded) {
+            final data = state.providerData;
             return SingleChildScrollView(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -141,10 +140,13 @@ class _DoctorDetailsViewState extends State<_DoctorDetailsView> {
                         const SizedBox(height: 10),
                         _buildSectionTitle("Clinic Location"),
                         const SizedBox(height: 5),
-                        LocationTileWidget(address: state.doctor.address),
+                        LocationTileWidget(address: widget.provider.location),
+
                         const SizedBox(height: 10),
                         _buildSectionTitle("About"),
-                        _buildBioContainer(state.doctor.bio),
+                        _buildBioContainer(
+                          data.bio ?? "No description available",
+                        ),
 
                         const SizedBox(height: 15),
                         _buildSectionTitle("Available Services"),
@@ -162,7 +164,7 @@ class _DoctorDetailsViewState extends State<_DoctorDetailsView> {
                                   const SizedBox(height: 5),
 
                                   SlotsSection(
-                                    slots: state.doctor.slots,
+                                    slots: data.slots,
                                     onSlotSelected: (day, slot) {
                                       setState(() {
                                         String newDate = day.date;
@@ -332,10 +334,10 @@ class _DoctorDetailsViewState extends State<_DoctorDetailsView> {
   }
 
   Widget _buildHeader(BuildContext context) {
-    final doctor = context.select((DoctorDetailsCubit cubit) {
+    final providerData = context.select((HealthcareDetailsCubit cubit) {
       final state = cubit.state;
-      if (state is DoctorDetailsLoaded) {
-        return state.doctor;
+      if (state is DetailsLoaded) {
+        return state.providerData;
       }
       return null;
     });
@@ -344,9 +346,9 @@ class _DoctorDetailsViewState extends State<_DoctorDetailsView> {
         SizedBox(
           height: 350,
           width: double.infinity,
-          child: doctor != null
+          child: providerData != null
               ? Image.network(
-                  doctor.profilePictureUrl,
+                  providerData.profilePictureUrl,
                   fit: BoxFit.cover,
                   errorBuilder: (_, __, ___) => Container(
                     color: Colors.blue.shade50,
@@ -405,14 +407,6 @@ class _DoctorDetailsViewState extends State<_DoctorDetailsView> {
   }
 
   Widget _buildBasicInfo(BuildContext context) {
-    final doctor = context.select((DoctorDetailsCubit cubit) {
-      final state = cubit.state;
-      if (state is DoctorDetailsLoaded) {
-        return state.doctor;
-      }
-      return null;
-    });
-    if (doctor == null) return const SizedBox();
     return Container(
       padding: const EdgeInsets.all(16),
       width: double.infinity,
@@ -434,13 +428,16 @@ class _DoctorDetailsViewState extends State<_DoctorDetailsView> {
           SizedBox(
             width: double.infinity,
             child: Text(
-              doctor.name,
-              textDirection: doctor.name.getDirection, // يمين أو شمال حسب اللغة
-              textAlign: doctor.name.getTextAlign,
+              widget.provider.name,
+              textDirection:
+                  widget.provider.name.getDirection, // يمين أو شمال حسب اللغة
+              textAlign: widget.provider.name.getTextAlign,
               style: TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
-                fontFamily: doctor.name.isArabic ? 'ElMessiri' : 'Cotta',
+                fontFamily: widget.provider.name.isArabic
+                    ? 'ElMessiri'
+                    : 'Cotta',
               ),
             ),
           ),
@@ -448,29 +445,17 @@ class _DoctorDetailsViewState extends State<_DoctorDetailsView> {
           SizedBox(
             width: double.infinity,
             child: Text(
-              doctor.specialtyName,
-              textDirection:
-                  doctor.specialtyName.getDirection, // يمين أو شمال حسب اللغة
-              textAlign: doctor.specialtyName.getTextAlign,
+              widget.provider.subTitle,
+              textDirection: widget
+                  .provider
+                  .subTitle
+                  .getDirection, // يمين أو شمال حسب اللغة
+              textAlign: widget.provider.subTitle.getTextAlign,
               style: TextStyle(
                 fontSize: 16,
                 color: Colors.blue[700],
                 fontWeight: FontWeight.w600,
                 fontFamily: 'Agency',
-              ),
-            ),
-          ),
-
-          SizedBox(
-            width: double.infinity,
-            child: Text(
-              doctor.title,
-              textDirection:
-                  doctor.title.getDirection, // يمين أو شمال حسب اللغة
-              textAlign: doctor.title.getTextAlign,
-              style: TextStyle(
-                color: Colors.grey[700],
-                fontFamily: doctor.title.isArabic ? 'ElMessiri' : 'Agency',
               ),
             ),
           ),
@@ -480,36 +465,60 @@ class _DoctorDetailsViewState extends State<_DoctorDetailsView> {
   }
 
   Widget _buildFeesSection(BuildContext context) {
-    final doctor = context.select((DoctorDetailsCubit cubit) {
-      final state = cubit.state;
-      if (state is DoctorDetailsLoaded) {
-        return state.doctor;
-      }
-      return null;
-    });
+    List<Widget> feeCards = [];
+    final type = widget.provider.providerType;
 
-    if (doctor == null) return const SizedBox();
+    String mainTitle = "Visit";
+    IconData mainIcon = FontAwesomeIcons.hospital;
 
-    return Row(
-      children: [
-        _buildFeeCard(
-          "Clinic Visit",
-          doctor.clinicFee,
-          FontAwesomeIcons.hospital,
-        ),
-        SizedBox(width: 10),
+    if (type == "Doctor") {
+      mainTitle = "Clinic Visit";
+    } else if (type == "Nurse") {
+      mainTitle = "Home Visit";
+      mainIcon = FontAwesomeIcons.userNurse;
+    } else if (type == "Lab") {
+      mainTitle = "Lab Test";
+      mainIcon = FontAwesomeIcons.flask; // أيقونة المعمل
+    }
 
-        // خيارات الطبيب الإضافية
-        if (doctor.allowHomeVisit) ...[
-          _buildFeeCard("Home Visit", doctor.homeFee, FontAwesomeIcons.home),
-          SizedBox(width: 10),
-        ],
+    feeCards.add(_buildFeeCard(mainTitle, widget.provider.mainFee, mainIcon));
 
-        if (doctor.allowOnlineConsultation) ...[
-          _buildFeeCard("Online", doctor.onlineFee, FontAwesomeIcons.video),
-        ],
-      ],
+    // إضافة الكارت الأساسي الموجود في الـ Interface
+    feeCards.add(
+      _buildFeeCard(
+        widget.provider.providerType == "Doctor"
+            ? "Clinic Visit"
+            : "Home Visit",
+        widget.provider.mainFee,
+        widget.provider.providerType == "Doctor"
+            ? FontAwesomeIcons.hospital
+            : FontAwesomeIcons.userNurse,
+      ),
     );
+
+    if (widget.provider is Nurse) {
+      final nurse = widget.provider as Nurse;
+      feeCards.add(const SizedBox(width: 10));
+      feeCards.add(
+        _buildFeeCard("Hourly Rate", nurse.hourPrice, FontAwesomeIcons.clock),
+      );
+    }
+
+    // إضافة خيارات الطبيب الإضافية
+    if (widget.provider is Doctor) {
+      final doctor = widget.provider as Doctor;
+      if (doctor.allowOnline) {
+        feeCards.add(const SizedBox(width: 10));
+        feeCards.add(
+          _buildFeeCard(
+            "Online",
+            150.0 /* أو حقل السعر */,
+            FontAwesomeIcons.video,
+          ),
+        );
+      }
+    }
+    return Row(children: feeCards);
   }
 
   Widget _buildFeeCard(String type, double amount, IconData icon) {

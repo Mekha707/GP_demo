@@ -19,12 +19,12 @@ class _BookingPageState extends State<BookingPage> {
     {
       "name": "Doctor",
       "icon": FontAwesomeIcons.stethoscope,
-      "color": Color(0xff0861dd),
+      "color": Color(0xff131ab9),
     },
     {
       "name": "Nurse",
       "icon": Icons.medical_services,
-      "color": Colors.deepOrange,
+      "color": Color(0xff0082c5),
     },
     {"name": "Labs", "icon": Icons.biotech, "color": Colors.teal},
   ];

@@ -6,6 +6,7 @@ import 'package:healthcareapp_try1/Bloc/User_Bloc/NurseBloc/nurse_state.dart';
 import 'package:healthcareapp_try1/Buttons/buttons.dart';
 import 'package:healthcareapp_try1/Buttons/filter_button.dart';
 import 'package:healthcareapp_try1/Models/Users_Models/enums.dart';
+import 'package:healthcareapp_try1/Pages/Booking/healtcare_provider.dart';
 import 'package:healthcareapp_try1/Widgets/custom_loader1.dart';
 import 'package:healthcareapp_try1/Widgets/medical_staff_cards.dart';
 import 'package:healthcareapp_try1/Widgets/search_for_medical_staff.dart';
@@ -52,7 +53,7 @@ class _NursePage extends State<NursePage> {
       builder: (context, state) {
         if (state is NursesLoading) {
           return const Center(
-            child: CustomSpinner(size: 40, color: Colors.deepOrange),
+            child: CustomSpinner(size: 40, color: Color(0xff0082c5)),
           );
         }
 
@@ -66,7 +67,7 @@ class _NursePage extends State<NursePage> {
                   style: TextStyle(
                     fontSize: 16,
                     fontFamily: 'ElMessiri',
-                    color: Colors.deepOrange,
+                    color: Color(0xff0082c5),
                   ),
                 ),
                 const SizedBox(height: 12),
@@ -75,7 +76,7 @@ class _NursePage extends State<NursePage> {
                   onPressed: () =>
                       context.read<NursesBloc>().add(FetchNurses()),
                   fontcolor: Colors.grey.shade100,
-                  buttoncolor: Colors.deepOrange,
+                  buttoncolor: Color(0xff0082c5),
                   buttonText: "Try Again",
                 ),
               ],
@@ -100,7 +101,7 @@ class _NursePage extends State<NursePage> {
                       isFilterd = !isFilterd;
                     });
                   },
-                  activeColor: Colors.deepOrange,
+                  activeColor: Color(0xff0082c5),
                 ),
                 const SliverToBoxAdapter(child: SizedBox(height: 10)),
 
@@ -145,14 +146,16 @@ class _NursePage extends State<NursePage> {
                                   padding: EdgeInsets.all(16),
                                   child: CustomSpinner(
                                     size: 40,
-                                    color: Color(0xff0861dd),
+                                    color: Color(0xff0082c5),
                                   ),
                                 ),
                               );
                             }
                             final nurse = state.filteredNurses[index];
 
-                            return NurseCard(nurse: nurse);
+                            return UniversalMedicalCard(
+                              provider: nurse as HealthcareProvider,
+                            );
                           },
                           childCount:
                               state.filteredNurses.length +

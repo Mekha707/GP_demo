@@ -1,15 +1,32 @@
-class Doctor {
+import 'package:healthcareapp_try1/Pages/Booking/healtcare_provider.dart';
+
+class Doctor extends HealthcareProvider {
+  @override
   final String id;
+  @override
   final String name;
   final String specialty;
   final String title;
   final String address;
   final double fee;
+  @override
   final double rating;
+  @override
   final int ratingsCount;
   final bool allowHome;
   final bool allowOnline;
+  @override
   final String profilePictureUrl;
+
+  // تطبيق الـ Interface (Mapping)
+  @override
+  String get subTitle => "$specialty - $title";
+  @override
+  String get location => address;
+  @override
+  double get mainFee => fee;
+  @override
+  String get providerType => "Doctor";
 
   Doctor({
     required this.id,
