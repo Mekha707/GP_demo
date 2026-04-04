@@ -28,4 +28,16 @@ class WorkingDays {
       isFridayOpen: json['isFridayOpen'] ?? false,
     );
   }
+
+  factory WorkingDays.defaultDays() {
+    return WorkingDays(
+      isSaturdayOpen: false,
+      isSundayOpen: false,
+      isMondayOpen: false,
+      isTuesdayOpen: false,
+      isWednesdayOpen: false,
+      isThursdayOpen: false,
+      isFridayOpen: false,
+    );
+  }
 }

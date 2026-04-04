@@ -22,9 +22,11 @@ class PaginatedList<T> {
     T Function(Map<String, dynamic>) fromJsonT,
   ) {
     return PaginatedList(
-      items: (json['items'] as List)
-          .map((e) => fromJsonT(e as Map<String, dynamic>))
-          .toList(),
+      items:
+          (json['items'] as List?)
+              ?.map((e) => fromJsonT(e as Map<String, dynamic>))
+              .toList() ??
+          [],
       pageNumber: json['pageNumber'] as int,
       totalCount: json['totalCount'] as int,
       pageSize: json['pageSize'] as int,

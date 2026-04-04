@@ -20,14 +20,25 @@ class ReviewsError extends ReviewsState {
 }
 
 class ReviewsCubit extends Cubit<ReviewsState> {
-  final UserService _userService; // أو الريبوزيتوري الخاص بكِ
+  final UserService _userService;
 
   ReviewsCubit(this._userService) : super(ReviewsInitial());
 
-  Future<void> fetchReviews(String doctorId, {int page = 1}) async {
+  // أضفنا parameter الـ type لتحديد الوجهة
+  Future<void> fetchReviews(String id, String type, {int page = 1}) async {
     emit(ReviewsLoading());
     try {
-      final result = await _userService.getDoctorReviews(doctorId);
+      PaginatedList<ReviewModel> result;
+
+      // اختيار الدالة المناسبة بناءً على النوع القادم من الصفحة
+      if (type == "Nurse") {
+        result = await _userService.getNurseReviews(id, page: page);
+      } else if (type == "Doctor") {
+        result = await _userService.getDoctorReviews(id, page: page);
+      } else {
+        result = await _userService.getLabReviews(id, page: page);
+      }
+
       emit(ReviewsLoaded(result));
     } catch (e) {
       emit(ReviewsError(e.toString()));

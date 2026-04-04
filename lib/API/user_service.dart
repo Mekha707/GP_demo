@@ -6,6 +6,7 @@ import 'dart:developer';
 
 import 'package:dio/dio.dart';
 import 'package:healthcareapp_try1/API/details_service.dart';
+import 'package:healthcareapp_try1/Models/Booking_Models/test_model.dart';
 import 'package:healthcareapp_try1/Models/DetailsModel.dart/doctor_details_model.dart';
 import 'package:healthcareapp_try1/Models/DetailsModel.dart/lab_details_model.dart';
 import 'package:healthcareapp_try1/Models/DetailsModel.dart/nurse_details_model.dart';
@@ -106,6 +107,32 @@ class UserService {
     return handleResponse(apiResponse);
   }
 
+  Future<PaginatedList<ReviewModel>> getDoctorReviews(
+    String doctorId, {
+    int page = 1,
+  }) async {
+    try {
+      final response = await _dio.get(
+        'api/Reviews', // تأكدي أن هذا هو المسار الصحيح بدون / في البداية إذا كان الـ BaseUrl ينتهي بـ /
+        queryParameters: {
+          'TargetId': doctorId, // تغيير الاسم ليتطابق مع الـ API Request
+          'TargetType':
+              'Doctor', // أو القيمة المطلوبة في الـ API (مثل "1" أو "Doctor")
+          'pageNumber': page,
+          'pageSize': 10,
+        },
+      );
+
+      return PaginatedList<ReviewModel>.fromJson(
+        response.data,
+        (itemJson) => ReviewModel.fromJson(itemJson),
+      );
+    } on DioException catch (e) {
+      log("Dio Error: ${e.response?.statusCode} - ${e.response?.data}");
+      throw "فشل تحميل التقييمات";
+    }
+  }
+
   // --- Nurse Methods ---
   Future<PaginatedList<Nurse>> getNurses({
     int page = 1,
@@ -144,6 +171,32 @@ class UserService {
     return handleResponse(apiResponse);
   }
 
+  Future<PaginatedList<ReviewModel>> getNurseReviews(
+    String nurseId, {
+    int page = 1,
+  }) async {
+    try {
+      final response = await _dio.get(
+        'api/Reviews', // تأكدي أن هذا هو المسار الصحيح بدون / في البداية إذا كان الـ BaseUrl ينتهي بـ /
+        queryParameters: {
+          'TargetId': nurseId, // تغيير الاسم ليتطابق مع الـ API Request
+          'TargetType':
+              'Nurse', // أو القيمة المطلوبة في الـ API (مثل "1" أو "Nurse")
+          'pageNumber': page,
+          'pageSize': 10,
+        },
+      );
+
+      return PaginatedList<ReviewModel>.fromJson(
+        response.data,
+        (itemJson) => ReviewModel.fromJson(itemJson),
+      );
+    } on DioException catch (e) {
+      log("Dio Error: ${e.response?.statusCode} - ${e.response?.data}");
+      throw "فشل تحميل التقييمات";
+    }
+  }
+
   // --- Lab Methods ---
   Future<PaginatedList<LabModel>> getLabs({int page = 1}) async {
     try {
@@ -160,15 +213,40 @@ class UserService {
     }
   }
 
-  Future<LabDetailsModel> getLabById(String labId) async {
-    final response = await _dio.get('api/labs/$labId');
+  Future<LabDetailsModel> getLabById(String id) async {
+    try {
+      final response = await _dio.get('api/Labs/$id');
+      // نرسل الـ response.data كاملاً لأن الـ factory مجهز لاستقباله
+      return LabDetailsModel.fromJson(response.data);
+    } catch (e) {
+      rethrow;
+    }
+  }
 
-    final apiResponse = DetailsService.fromJson(
-      response.data as Map<String, dynamic>,
-      LabDetailsModel.fromJson,
-    );
+  Future<PaginatedList<ReviewModel>> getLabReviews(
+    String labId, {
+    int page = 1,
+  }) async {
+    try {
+      final response = await _dio.get(
+        'api/Reviews', // تأكدي أن هذا هو المسار الصحيح بدون / في البداية إذا كان الـ BaseUrl ينتهي بـ /
+        queryParameters: {
+          'TargetId': labId, // تغيير الاسم ليتطابق مع الـ API Request
+          'TargetType':
+              'Lab', // أو القيمة المطلوبة في الـ API (مثل "1" أو "Lab")
+          'pageNumber': page,
+          'pageSize': 10,
+        },
+      );
 
-    return handleResponse(apiResponse);
+      return PaginatedList<ReviewModel>.fromJson(
+        response.data,
+        (itemJson) => ReviewModel.fromJson(itemJson),
+      );
+    } on DioException catch (e) {
+      log("Dio Error: ${e.response?.statusCode} - ${e.response?.data}");
+      throw "Unable to Load Reviews";
+    }
   }
 
   // --- Error Handling (مكان واحد لكل الخدمات) ---
@@ -205,55 +283,9 @@ class UserService {
         .toList();
   }
 
-  Future<PaginatedList<ReviewModel>> getDoctorReviews(
-    String doctorId, {
-    int page = 1,
-  }) async {
-    try {
-      final response = await _dio.get(
-        'api/Reviews', // تأكدي أن هذا هو المسار الصحيح بدون / في البداية إذا كان الـ BaseUrl ينتهي بـ /
-        queryParameters: {
-          'TargetId': doctorId, // تغيير الاسم ليتطابق مع الـ API Request
-          'TargetType':
-              'Doctor', // أو القيمة المطلوبة في الـ API (مثل "1" أو "Doctor")
-          'pageNumber': page,
-          'pageSize': 10,
-        },
-      );
+  Future<List<Test>> getTests() async {
+    final response = await _dio.get('api/Tests');
 
-      return PaginatedList<ReviewModel>.fromJson(
-        response.data,
-        (itemJson) => ReviewModel.fromJson(itemJson),
-      );
-    } on DioException catch (e) {
-      log("Dio Error: ${e.response?.statusCode} - ${e.response?.data}");
-      throw "فشل تحميل التقييمات";
-    }
-  }
-
-  Future<PaginatedList<ReviewModel>> getNurseReviews(
-    String nurseId, {
-    int page = 1,
-  }) async {
-    try {
-      final response = await _dio.get(
-        'Review/GetReviews', // تأكدي أن هذا هو المسار الصحيح بدون / في البداية إذا كان الـ BaseUrl ينتهي بـ /
-        queryParameters: {
-          'TargetId': nurseId, // تغيير الاسم ليتطابق مع الـ API Request
-          'TargetType':
-              'Nurse', // أو القيمة المطلوبة في الـ API (مثل "1" أو "Nurse")
-          'pageNumber': page,
-          'pageSize': 10,
-        },
-      );
-
-      return PaginatedList<ReviewModel>.fromJson(
-        response.data,
-        (itemJson) => ReviewModel.fromJson(itemJson),
-      );
-    } on DioException catch (e) {
-      log("Dio Error: ${e.response?.statusCode} - ${e.response?.data}");
-      throw "فشل تحميل التقييمات";
-    }
+    return (response.data as List).map((e) => Test.fromJson(e)).toList();
   }
 }

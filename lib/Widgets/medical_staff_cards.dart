@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:healthcareapp_try1/Models/Users_Models/doctor_model.dart';
 import 'package:healthcareapp_try1/Models/Users_Models/lab_model.dart';
 import 'package:healthcareapp_try1/Models/Users_Models/nurse_model.dart';
-import 'package:healthcareapp_try1/Pages/Booking/doctor_details_page.dart';
+import 'package:healthcareapp_try1/Pages/Booking/universal_details_page.dart';
 import 'package:healthcareapp_try1/Pages/Booking/healtcare_provider.dart';
 
 class UniversalMedicalCard extends StatefulWidget {

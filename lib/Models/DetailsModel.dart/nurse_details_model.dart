@@ -3,69 +3,52 @@ import 'package:healthcareapp_try1/Models/Logic/day_schedule.dart';
 class NurseDetailsModel {
   final String id;
   final String name;
-  final String specialtyId;
-  final String specialtyName;
-  final String title;
   final String bio;
   final String city;
-  final String address;
-  final String? addressUrl;
-  final String gender;
+  final String phoneNumber;
+  final String gender; // الـ Gender في الـ C# غالباً Enum بيرجع String أو Int
   final double rating;
   final int ratingsCount;
-  final double clinicFee;
-  final double homeFee;
-  final double onlineFee;
-  final bool allowHomeVisit;
-  final bool allowOnlineConsultation;
+  final double hourPrice;
+  final double homeVisitFee;
   final String profilePictureUrl;
-  final List<DaySchedule> slots;
+  final List<DaySchedule> slots; // سنقوم بربطها بـ Shifts من الـ JSON
 
   NurseDetailsModel({
     required this.id,
     required this.name,
-    required this.specialtyId,
-    required this.specialtyName,
-    required this.title,
     required this.bio,
     required this.city,
-    required this.address,
-    this.addressUrl,
+    required this.phoneNumber,
     required this.gender,
     required this.rating,
     required this.ratingsCount,
-    required this.clinicFee,
-    required this.homeFee,
-    required this.onlineFee,
-    required this.allowHomeVisit,
-    required this.allowOnlineConsultation,
+    required this.hourPrice,
+    required this.homeVisitFee,
     required this.profilePictureUrl,
     required this.slots,
   });
 
   factory NurseDetailsModel.fromJson(Map<String, dynamic> json) {
     return NurseDetailsModel(
-      id: json['id'],
-      name: json['name'],
-      specialtyId: json['specialtyId'],
-      specialtyName: json['specialtyName'],
-      title: json['title'],
-      bio: json['bio'],
-      city: json['city'],
-      address: json['address'],
-      addressUrl: json['addressUrl'],
-      gender: json['gender'],
-      rating: (json['rating'] as num).toDouble(),
-      ratingsCount: json['ratingsCount'],
-      clinicFee: (json['clinicFee'] as num).toDouble(),
-      homeFee: (json['homeFee'] as num).toDouble(),
-      onlineFee: (json['onlineFee'] as num).toDouble(),
-      allowHomeVisit: json['allowHomeVisit'],
-      allowOnlineConsultation: json['allowOnlineConsultation'],
-      profilePictureUrl: json['profilePictureUrl'],
-      slots: (json['slots'] as List)
-          .map((e) => DaySchedule.fromJson(e))
-          .toList(),
+      id: json['id'] ?? '',
+      name: json['name'] ?? '',
+      bio: json['bio'] ?? '',
+      city: json['city'] ?? '',
+      phoneNumber: json['phoneNumber'] ?? '',
+      gender: json['gender']?.toString() ?? '',
+      rating: (json['rating'] as num?)?.toDouble() ?? 0.0,
+      ratingsCount: json['ratingsCount'] ?? 0,
+      hourPrice: (json['hourPrice'] as num?)?.toDouble() ?? 0.0,
+      homeVisitFee: (json['homeVisitFee'] as num?)?.toDouble() ?? 0.0,
+      profilePictureUrl: json['profilePictureUrl'] ?? '',
+
+      // مهم جداً: الـ API يرسل 'shifts' وليس 'slots'
+      slots:
+          (json['shifts'] as List?)
+              ?.map((e) => DaySchedule.fromJson(e))
+              .toList() ??
+          [],
     );
   }
 }

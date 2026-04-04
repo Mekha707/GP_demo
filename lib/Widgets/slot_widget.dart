@@ -5,12 +5,14 @@ import 'package:healthcareapp_try1/Models/Logic/time_slot.dart';
 
 class SlotsSection extends StatefulWidget {
   final List<DaySchedule> slots;
+  final bool isNurse;
   final void Function(DaySchedule day, TimeSlot slot) onSlotSelected;
 
   const SlotsSection({
     super.key,
     required this.slots,
     required this.onSlotSelected,
+    this.isNurse = false,
   });
 
   @override
@@ -131,12 +133,16 @@ class _SlotsSectionState extends State<SlotsSection> {
     final day = _currentDay;
     if (day == null) return const SizedBox();
 
-    if (day.slots.isEmpty) {
+    final visibleSlots = widget.isNurse
+        ? day.slots.where((s) => !s.isBooked).toList()
+        : day.slots;
+
+    if (visibleSlots.isEmpty) {
       return Center(
         child: Padding(
           padding: EdgeInsets.all(24),
           child: Text(
-            'No available slots for this day',
+            widget.isNurse ? 'No available slots' : 'No slots for this day',
             style: TextStyle(color: Colors.grey.shade800, fontFamily: 'Agency'),
           ),
         ),
@@ -154,8 +160,8 @@ class _SlotsSectionState extends State<SlotsSection> {
           mainAxisSpacing: 8,
           childAspectRatio: 1.1,
         ),
-        itemCount: day.slots.length,
-        itemBuilder: (context, index) => _buildSlotCard(day.slots[index]),
+        itemCount: visibleSlots.length,
+        itemBuilder: (context, index) => _buildSlotCard(visibleSlots[index]),
       ),
     );
   }
@@ -228,34 +234,39 @@ class _SlotsSectionState extends State<SlotsSection> {
               style: TextStyle(fontSize: 11, color: subColor),
             ),
             const SizedBox(height: 5),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
-              decoration: BoxDecoration(
-                color: isBooked
-                    ? const Color(0xFFFCEBEB)
-                    : isSelected
-                    ? Colors.white24
-                    : const Color(0xFFE1F5EE),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Text(
-                isBooked
-                    ? 'Booked'
-                    : isSelected
-                    ? '✓ Selected'
-                    : 'Available',
-                style: TextStyle(
-                  fontSize: 9,
-                  fontWeight: FontWeight.w500,
-                  fontFamily: 'Agency',
-                  color: isBooked
-                      ? const Color(0xFFA32D2D)
-                      : isSelected
-                      ? Colors.white
-                      : const Color(0xFF0F6E56),
-                ),
-              ),
-            ),
+            widget.isNurse
+                ? SizedBox(height: 10)
+                : Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: isBooked
+                          ? const Color(0xFFFCEBEB)
+                          : isSelected
+                          ? Colors.white24
+                          : const Color(0xFFE1F5EE),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      isBooked
+                          ? 'Booked'
+                          : isSelected
+                          ? '✓ Selected'
+                          : 'Available',
+                      style: TextStyle(
+                        fontSize: 9,
+                        fontWeight: FontWeight.w500,
+                        fontFamily: 'Agency',
+                        color: isBooked
+                            ? const Color(0xFFA32D2D)
+                            : isSelected
+                            ? Colors.white
+                            : const Color(0xFF0F6E56),
+                      ),
+                    ),
+                  ),
           ],
         ),
       ),

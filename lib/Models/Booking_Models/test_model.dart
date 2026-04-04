@@ -3,16 +3,16 @@ class Test {
   final String name;
   final String description;
   final String preRequisites;
-  final double price;
-  final bool isAvailableAtHome;
+  final double? price; // ممكن يكون null لو السيرفر ما بعتش السعر
+  final bool? isAvailableAtHome; // ممكن يكون null لو السيرفر ما بعت
 
   Test({
+    this.price,
+    this.isAvailableAtHome,
     required this.id,
     required this.name,
     required this.description,
     required this.preRequisites,
-    required this.price,
-    required this.isAvailableAtHome,
   });
 
   factory Test.fromJson(Map<String, dynamic> json) {

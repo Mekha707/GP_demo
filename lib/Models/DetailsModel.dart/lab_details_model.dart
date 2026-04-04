@@ -1,7 +1,8 @@
 import 'package:healthcareapp_try1/Models/Booking_Models/test_model.dart';
 import 'package:healthcareapp_try1/Models/Users_Models/working_days.dart';
+import 'package:healthcareapp_try1/Pages/Booking/healtcare_provider.dart';
 
-class LabDetailsModel {
+class LabDetailsModel extends HealthcareProvider {
   final String id;
   final String name;
   final String bio;
@@ -35,21 +36,59 @@ class LabDetailsModel {
   });
 
   factory LabDetailsModel.fromJson(Map<String, dynamic> json) {
+    // 1. الدخول لمستوى الـ value لأن البيانات الحقيقية جواه
+    final data = json['value'] ?? json;
+
     return LabDetailsModel(
-      addressUrl: json['addressUrl'],
-      openingTime: json['openingTime'],
-      closingTime: json['closingTime'],
-      workingDays: WorkingDays.fromJson(json['workingDays']),
-      id: json['id'],
-      name: json['name'],
-      bio: json['bio'],
-      city: json['city'],
-      address: json['address'],
-      phoneNumber: json['phoneNumber'],
-      rating: (json['rating'] as num).toDouble(),
-      homeVisitFee: (json['homeVisitFee'] as num).toDouble(),
-      profilePictureUrl: json['profilePictureUrl'],
-      tests: (json['tests'] as List).map((e) => Test.fromJson(e)).toList(),
+      // استخدمنا data['...'] بدل json['...']
+      addressUrl: data['addressUrl'],
+      openingTime: data['openingTime'] ?? '',
+      closingTime: data['closingTime'] ?? '',
+
+      // تأمين الـ workingDays لو السيرفر بعتها null
+      workingDays: data['workingDays'] != null
+          ? WorkingDays.fromJson(data['workingDays'])
+          : WorkingDays(
+              isSaturdayOpen: false,
+              isSundayOpen: false,
+              isMondayOpen: false,
+              isTuesdayOpen: false,
+              isWednesdayOpen: false,
+              isThursdayOpen: false,
+              isFridayOpen: false,
+            ),
+
+      id: data['id'] ?? '',
+      name: data['name'] ?? '',
+      bio: data['bio'] ?? '',
+      city: data['city'] ?? '',
+      address: data['address'] ?? '',
+      phoneNumber: data['phoneNumber'] ?? '',
+
+      // تأمين الـ Double casting عشان الأرقام متضربش (as num? ثم toDouble)
+      rating: (data['rating'] as num? ?? 0.0).toDouble(),
+      homeVisitFee: (data['homeVisitFee'] as num? ?? 0.0).toDouble(),
+
+      profilePictureUrl: data['profilePictureUrl'] ?? '',
+
+      // تأمين الـ List عشان لو مفيش تحاليل ميرميش Exception
+      tests:
+          (data['tests'] as List?)?.map((e) => Test.fromJson(e)).toList() ?? [],
     );
   }
+
+  @override
+  String get location => addressUrl ?? address;
+
+  @override
+  double get mainFee => homeVisitFee;
+
+  @override
+  String get providerType => "Lab";
+
+  @override
+  int get ratingsCount => ratingsCount;
+
+  @override
+  String get subTitle => bio;
 }

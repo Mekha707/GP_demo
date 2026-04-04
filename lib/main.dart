@@ -11,7 +11,7 @@ import 'package:healthcareapp_try1/Bloc/Auth_Bloc/LoginBloc/login_bloc.dart';
 import 'package:healthcareapp_try1/Bloc/Auth_Bloc/Patient_Profile.dart/patient_profile_cubit.dart';
 import 'package:healthcareapp_try1/Bloc/Auth_Bloc/RegisterationBloc/register_bloc.dart';
 import 'package:healthcareapp_try1/Bloc/BookingBloc/booking_bloc.dart';
-import 'package:healthcareapp_try1/Bloc/DetailsBoc/doctor_details_cubit.dart';
+import 'package:healthcareapp_try1/Bloc/DetailsBoc/universal_details_cubit.dart';
 import 'package:healthcareapp_try1/Bloc/NavigationBloc/navigation_bloc.dart';
 import 'package:healthcareapp_try1/Bloc/User_Bloc/DoctorBloc/doctor_bloc.dart';
 import 'package:healthcareapp_try1/Bloc/User_Bloc/LabBloc/lab_bloc.dart';
