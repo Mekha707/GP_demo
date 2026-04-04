@@ -3,14 +3,18 @@ import 'package:healthcareapp_try1/Models/Users_Models/working_days.dart';
 import 'package:healthcareapp_try1/Pages/Booking/healtcare_provider.dart';
 
 class LabDetailsModel extends HealthcareProvider {
+  @override
   final String id;
+  @override
   final String name;
   final String bio;
   final String city;
   final String address;
   final String phoneNumber;
+  @override
   final double rating;
   final double homeVisitFee;
+  @override
   final String profilePictureUrl;
   final List<Test> tests;
   final String? addressUrl;
@@ -87,6 +91,7 @@ class LabDetailsModel extends HealthcareProvider {
   String get providerType => "Lab";
 
   @override
+  // ignore: recursive_getters
   int get ratingsCount => ratingsCount;
 
   @override

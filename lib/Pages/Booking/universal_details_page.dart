@@ -1,9 +1,10 @@
-// ignore_for_file: deprecated_member_use
+// ignore_for_file: deprecated_member_use, file_names
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:healthcareapp_try1/Models/Booking_Models/test_model.dart';
+import 'package:healthcareapp_try1/Models/Users_Models/nurse_model.dart';
 import 'package:intl/intl.dart';
 import 'package:healthcareapp_try1/API/user_service.dart';
 import 'package:healthcareapp_try1/Bloc/DetailsBoc/universal_details_cubit.dart';
@@ -12,8 +13,6 @@ import 'package:healthcareapp_try1/Buttons/buttons.dart';
 import 'package:healthcareapp_try1/Models/DetailsModel.dart/lab_details_model.dart';
 import 'package:healthcareapp_try1/Models/DetailsModel.dart/review_model.dart';
 import 'package:healthcareapp_try1/Models/Users_Models/doctor_model.dart';
-import 'package:healthcareapp_try1/Models/Users_Models/lab_model.dart';
-import 'package:healthcareapp_try1/Models/Users_Models/nurse_model.dart';
 import 'package:healthcareapp_try1/Models/Users_Models/working_days.dart';
 import 'package:healthcareapp_try1/Pages/Booking/healtcare_provider.dart';
 import 'package:healthcareapp_try1/Widgets/custom_loader1.dart';
@@ -697,7 +696,7 @@ class _ProviderDetailsViewState extends State<_ProviderDetailsView> {
 
     // 2. خيارات إضافية للممرض
     if (type == "Nurse") {
-      final nurse = widget.provider as Nurse;
+      final nurse = widget.provider.providerType as Nurse;
       feeCards.add(const SizedBox(width: 10));
       feeCards.add(
         _buildFeeCard(
