@@ -198,17 +198,65 @@ class UserService {
   }
 
   // --- Lab Methods ---
-  Future<PaginatedList<LabModel>> getLabs({int page = 1}) async {
+  // Future<PaginatedList<LabModel>> getLabs({int page = 1}) async {
+  //   try {
+  //     final response = await _dio.get(
+  //       'api/labs',
+  //       queryParameters: {'pageNumber': page},
+  //     );
+  //     return PaginatedList.fromJson(
+  //       response.data as Map<String, dynamic>,
+  //       LabModel.fromJson,
+  //     );
+  //   } on DioException catch (e) {
+  //     throw _handleError(e);
+  //   }
+  // }
+
+  Future<List<LabModel>> getLabs({
+    int page = 1,
+    String? name,
+    String? location,
+    List<String>? testIds,
+  }) async {
     try {
+      final Map<String, dynamic> queryParams = {
+        'Page': page, // لاحظ استخدمت Page كابيتال زي الـ Doctors
+        'PageSize': 10,
+      };
+
+      if (name != null && name.isNotEmpty)
+        queryParams['Search'] = name; // السيرفر بيحب كلمة Search غالباً
+      if (location != null && location.isNotEmpty)
+        queryParams['City'] = location;
+
+      // جربي تبعتيها بدون [] أولاً لو السيرفر Standard
+      if (testIds != null && testIds.isNotEmpty) {
+        queryParams['TestIds'] = testIds;
+      }
+
       final response = await _dio.get(
-        'api/labs',
-        queryParameters: {'pageNumber': page},
+        'api/Labs', // L كابيتال لتوحيد الشكل مع Doctors و Nurses
+        queryParameters: queryParams,
       );
-      return PaginatedList.fromJson(
-        response.data as Map<String, dynamic>,
-        LabModel.fromJson,
-      );
+
+      // التأكد من استخراج القائمة بشكل صحيح
+      if (response.data is List) {
+        return (response.data as List)
+            .map((json) => LabModel.fromJson(json))
+            .toList();
+      } else if (response.data is Map && response.data['data'] != null) {
+        return (response.data['data'] as List)
+            .map((json) => LabModel.fromJson(json))
+            .toList();
+      } else {
+        // لو السيرفر باعت Pagination زي الدكاترة
+        return (response.data['items'] as List)
+            .map((json) => LabModel.fromJson(json))
+            .toList();
+      }
     } on DioException catch (e) {
+      log("Labs API Error: ${e.response?.statusCode} - ${e.response?.data}");
       throw _handleError(e);
     }
   }
@@ -283,9 +331,21 @@ class UserService {
         .toList();
   }
 
-  Future<List<Test>> getTests() async {
-    final response = await _dio.get('api/Tests');
+  Future<List<Test>> fetchTests() async {
+    try {
+      final response = await _dio.get(
+        'api/Tests',
+      ); // تأكد من المسار الصحيح حسب الـ API عندك
 
-    return (response.data as List).map((e) => Test.fromJson(e)).toList();
+      if (response.statusCode == 200) {
+        // بما أن الـ Dio بيعمل jsonDecode تلقائياً، الـ response.data هيكون List
+        List<dynamic> data = response.data;
+        return data.map((json) => Test.fromJson(json)).toList();
+      } else {
+        throw Exception('Failed to load tests');
+      }
+    } catch (e) {
+      throw Exception('Error: $e');
+    }
   }
 }

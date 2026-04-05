@@ -80,7 +80,7 @@ class _FlipRadioButtonState<T> extends State<FlipRadioButton<T>>
                 final isFirstHalf = angle < (pi / 2);
 
                 final color = Color.lerp(
-                  Color(0xff0861dd),
+                  Color(0xff131ab9),
                   Colors.grey.shade200,
                   _animation.value,
                 )!;

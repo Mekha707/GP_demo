@@ -9,6 +9,7 @@ class RefreshLabs extends LabsEvent {}
 class FilterLabs extends LabsEvent {
   final String? name;
   final String? location;
+  final List<String>? testIds; // أضف هذا السطر
 
-  FilterLabs({this.name, this.location});
+  FilterLabs({this.name, this.location, this.testIds});
 }

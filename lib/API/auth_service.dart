@@ -289,9 +289,3 @@ class AuthService {
   }
 }
 
-// in Home Page
-// / في صفحة الـ HomePage بعد الانتقال
-// final state = context.read<LoginBloc>().state;
-// if (state is LoginSuccess) {
-//   print(state.email); // هيطبع الإيميل اللي دخلت بيه
-// }

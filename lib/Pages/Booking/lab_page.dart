@@ -169,119 +169,244 @@ class _LabPageState extends State<LabPage> {
     }
   }
 
+  // @override
+  // Widget build(BuildContext context) {
+  //   return BlocConsumer<LabsBloc, LabsState>(
+  //     listener: (context, state) {},
+  //     builder: (context, state) {
+  //       if (state is LabsLoading) {
+  //         return const Center(
+  //           child: CustomSpinner(size: 40, color: Colors.teal),
+  //         );
+  //       }
+
+  //       if (state is LabsError) {
+  //         return Center(
+  //           child: Column(
+  //             mainAxisAlignment: MainAxisAlignment.center,
+  //             children: [
+  //               Text(
+  //                 state.message,
+  //                 style: const TextStyle(
+  //                   fontSize: 16,
+  //                   fontFamily: 'ElMessiri',
+  //                   color: Colors.teal,
+  //                 ),
+  //               ),
+  //               const SizedBox(height: 12),
+  //               ButtonOfAuth(
+  //                 onPressed: () => context.read<LabsBloc>().add(FetchLabs()),
+  //                 fontcolor: Colors.grey.shade100,
+  //                 buttoncolor: Colors.teal,
+  //                 buttonText: "Try Again",
+  //               ),
+  //             ],
+  //           ),
+  //         );
+  //       }
+
+  //       if (state is LabsLoaded) {
+  //         return RefreshIndicator(
+  //           onRefresh: () async {
+  //             context.read<LabsBloc>().add(RefreshLabs());
+  //           },
+  //           child: CustomScrollView(
+  //             controller: _scrollController,
+  //             slivers: [
+  //               CustomFilterButton(
+  //                 isSelected: isFilterd,
+  //                 inactiveText: "Filter Labs",
+  //                 onTap: () {
+  //                   setState(() {
+  //                     isFilterd = !isFilterd;
+  //                   });
+  //                 },
+  //                 activeColor: Colors.teal,
+  //               ),
+
+  //               // 2. الفلتر مع أنميشن الظهور
+  //               SliverAnimatedOpacity(
+  //                 opacity: isFilterd ? 1.0 : 0.0,
+  //                 duration: const Duration(milliseconds: 400),
+  //                 sliver: isFilterd
+  //                     ? SliverToBoxAdapter(
+  //                         child: SearchForNurseAndLab(
+  //                           medicalStaff: MedicalStaff.lab,
+  //                           onFilterChanged: (name, specialty, location) {
+  //                             context.read<LabsBloc>().add(
+  //                               FilterLabs(name: name),
+  //                             );
+  //                           },
+  //                         ),
+  //                       )
+  //                     : const SliverToBoxAdapter(child: SizedBox.shrink()),
+  //               ),
+  //               const SliverToBoxAdapter(child: SizedBox(height: 10)),
+
+  //               state.filteredLabs.isEmpty
+  //                   ? const SliverFillRemaining(
+  //                       child: Center(
+  //                         child: Text('لا توجد معامل مطابقة للبحث'),
+  //                       ),
+  //                     )
+  //                   : SliverList(
+  //                       delegate: SliverChildBuilderDelegate(
+  //                         (context, index) {
+  //                           if (index == state.filteredLabs.length) {
+  //                             return const Center(
+  //                               child: Padding(
+  //                                 padding: EdgeInsets.all(16),
+  //                                 child: CustomSpinner(
+  //                                   color: Colors.teal,
+  //                                   size: 40,
+  //                                 ),
+  //                               ),
+  //                             );
+  //                           }
+  //                           final lab = state.filteredLabs[index];
+  //                           return UniversalMedicalCard(
+  //                             provider: lab as HealthcareProvider,
+  //                           );
+  //                         },
+  //                         childCount:
+  //                             state.filteredLabs.length +
+  //                             (state.isLoadingMore ? 1 : 0),
+  //                       ),
+  //                     ),
+
+  //               const SliverToBoxAdapter(child: SizedBox(height: 150)),
+  //             ],
+  //           ),
+  //         );
+  //       }
+
+  //       return const SizedBox();
+  //     },
+  //   );
+  // }
+
   @override
   Widget build(BuildContext context) {
-    return BlocConsumer<LabsBloc, LabsState>(
-      listener: (context, state) {},
-      builder: (context, state) {
-        if (state is LabsLoading) {
-          return const Center(
-            child: CustomSpinner(size: 40, color: Colors.teal),
-          );
-        }
-
-        if (state is LabsError) {
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  state.message,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontFamily: 'ElMessiri',
-                    color: Colors.teal,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                ButtonOfAuth(
-                  onPressed: () => context.read<LabsBloc>().add(FetchLabs()),
-                  fontcolor: Colors.grey.shade100,
-                  buttoncolor: Colors.teal,
-                  buttonText: "Try Again",
-                ),
-              ],
+    // لاحظي هنا: لم نعد نغلف الشاشة كلها بـ BlocConsumer
+    return Scaffold(
+      backgroundColor: Colors.grey.shade100,
+      // أضفت Scaffold للتأكد من الخلفية
+      body: RefreshIndicator(
+        onRefresh: () async {
+          context.read<LabsBloc>().add(RefreshLabs());
+        },
+        child: CustomScrollView(
+          controller: _scrollController,
+          slivers: [
+            // زر الفلتر يظل يستخدم setState لأنه يغير حالة local (isFilterd)
+            CustomFilterButton(
+              isSelected: isFilterd,
+              inactiveText: "Filter Labs",
+              onTap: () {
+                setState(() {
+                  isFilterd = !isFilterd;
+                });
+              },
+              activeColor: Colors.teal,
             ),
-          );
-        }
 
-        if (state is LabsLoaded) {
-          return RefreshIndicator(
-            onRefresh: () async {
-              context.read<LabsBloc>().add(RefreshLabs());
-            },
-            child: CustomScrollView(
-              controller: _scrollController,
-              slivers: [
-                CustomFilterButton(
-                  isSelected: isFilterd,
-                  inactiveText: "Filter Labs",
-                  onTap: () {
-                    setState(() {
-                      isFilterd = !isFilterd;
-                    });
-                  },
-                  activeColor: Colors.teal,
-                ),
-
-                // 2. الفلتر مع أنميشن الظهور
-                SliverAnimatedOpacity(
-                  opacity: isFilterd ? 1.0 : 0.0,
-                  duration: const Duration(milliseconds: 400),
-                  sliver: isFilterd
-                      ? SliverToBoxAdapter(
-                          child: SearchForNurse(
-                            medicalStaff: MedicalStaff.lab,
-                            onFilterChanged: (name, specialty, location) {
-                              context.read<LabsBloc>().add(
-                                FilterLabs(name: name),
-                              );
-                            },
-                          ),
-                        )
-                      : const SliverToBoxAdapter(child: SizedBox.shrink()),
-                ),
-                const SliverToBoxAdapter(child: SizedBox(height: 10)),
-
-                state.filteredLabs.isEmpty
-                    ? const SliverFillRemaining(
-                        child: Center(
-                          child: Text('لا توجد معامل مطابقة للبحث'),
-                        ),
-                      )
-                    : SliverList(
-                        delegate: SliverChildBuilderDelegate(
-                          (context, index) {
-                            if (index == state.filteredLabs.length) {
-                              return const Center(
-                                child: Padding(
-                                  padding: EdgeInsets.all(16),
-                                  child: CustomSpinner(
-                                    color: Colors.teal,
-                                    size: 40,
-                                  ),
-                                ),
-                              );
-                            }
-                            final lab = state.filteredLabs[index];
-                            return UniversalMedicalCard(
-                              provider: lab as HealthcareProvider,
-                            );
-                          },
-                          childCount:
-                              state.filteredLabs.length +
-                              (state.isLoadingMore ? 1 : 0),
-                        ),
+            // 1. الفلتر الآن "خارج" الـ BlocBuilder الخاص بالنتائج
+            // لن يتأثر بتغير الـ State بتاع الـ Bloc (إلا لو إنتِ عايزة كده)
+            SliverAnimatedOpacity(
+              opacity: isFilterd ? 1.0 : 0.0,
+              duration: const Duration(milliseconds: 400),
+              sliver: isFilterd
+                  ? SliverToBoxAdapter(
+                      child: SearchForNurseAndLab(
+                        medicalStaff: MedicalStaff.lab,
+                        onFilterChanged: (name, specialty, location) {
+                          // هنا نرسل الـ Event للـ Bloc فقط، ولا نحتاج لعمل setState في الـ Parent
+                          context.read<LabsBloc>().add(
+                            FilterLabs(name: name, location: location),
+                          );
+                        },
                       ),
-
-                const SliverToBoxAdapter(child: SizedBox(height: 150)),
-              ],
+                    )
+                  : const SliverToBoxAdapter(child: SizedBox.shrink()),
             ),
-          );
-        }
 
-        return const SizedBox();
-      },
+            const SliverToBoxAdapter(child: SizedBox(height: 10)),
+
+            // 2. هنا نضع الـ BlocBuilder فقط للجزء الذي يتغير فعلياً (القائمة)
+            BlocBuilder<LabsBloc, LabsState>(
+              builder: (context, state) {
+                if (state is LabsLoading) {
+                  return const SliverFillRemaining(
+                    child: Center(
+                      child: CustomSpinner(size: 40, color: Colors.teal),
+                    ),
+                  );
+                }
+
+                if (state is LabsError) {
+                  return SliverFillRemaining(
+                    child: Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            state.message,
+                            style: const TextStyle(color: Colors.teal),
+                          ),
+                          const SizedBox(height: 12),
+                          ButtonOfAuth(
+                            onPressed: () =>
+                                context.read<LabsBloc>().add(FetchLabs()),
+                            buttonText: "Try Again",
+                            fontcolor: Colors.white,
+                            buttoncolor: Colors.teal,
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                }
+
+                if (state is LabsLoaded) {
+                  if (state.filteredLabs.isEmpty) {
+                    return const SliverFillRemaining(
+                      child: Center(child: Text('لا توجد معامل مطابقة للبحث')),
+                    );
+                  }
+
+                  return SliverList(
+                    delegate: SliverChildBuilderDelegate(
+                      (context, index) {
+                        if (index == state.filteredLabs.length) {
+                          return const Center(
+                            child: Padding(
+                              padding: EdgeInsets.all(16),
+                              child: CustomSpinner(
+                                color: Colors.teal,
+                                size: 40,
+                              ),
+                            ),
+                          );
+                        }
+                        final lab = state.filteredLabs[index];
+                        return UniversalMedicalCard(
+                          provider: lab as HealthcareProvider,
+                        );
+                      },
+                      childCount:
+                          state.filteredLabs.length +
+                          (state.isLoadingMore ? 1 : 0),
+                    ),
+                  );
+                }
+                return const SliverToBoxAdapter(child: SizedBox());
+              },
+            ),
+
+            const SliverToBoxAdapter(child: SizedBox(height: 150)),
+          ],
+        ),
+      ),
     );
   }
 }

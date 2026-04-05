@@ -111,7 +111,7 @@ class _NursePage extends State<NursePage> {
                   duration: const Duration(milliseconds: 400),
                   sliver: isFilterd
                       ? SliverToBoxAdapter(
-                          child: SearchForNurse(
+                          child: SearchForNurseAndLab(
                             key: const PageStorageKey(
                               'nurse_search_unique_key',
                             ),

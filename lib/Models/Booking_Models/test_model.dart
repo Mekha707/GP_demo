@@ -21,8 +21,11 @@ class Test {
       name: json['name'],
       description: json['description'],
       preRequisites: json['preRequisites'],
-      price: (json['price'] as num).toDouble(),
-      isAvailableAtHome: json['isAvailableAtHome'],
+      price:
+          (json['price'] as num?)?.toDouble() ??
+          0.0, // تحويل السعر إلى double، وإذا كان null نستخدم 0.0
+      isAvailableAtHome:
+          json['isAvailableAtHome'] ?? false, // إذا كان null نستخدم false
     );
   }
 }

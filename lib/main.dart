@@ -18,6 +18,7 @@ import 'package:healthcareapp_try1/Bloc/User_Bloc/LabBloc/lab_bloc.dart';
 import 'package:healthcareapp_try1/Bloc/User_Bloc/NurseBloc/nurse_bloc.dart';
 import 'package:healthcareapp_try1/Bloc/User_Bloc/SpecialtyBloc/specialty_bloc.dart';
 import 'package:healthcareapp_try1/Bloc/User_Bloc/SpecialtyBloc/specialty_event.dart';
+import 'package:healthcareapp_try1/Bloc/User_Bloc/Tests_Bloc/test_bloc.dart';
 import 'package:healthcareapp_try1/Pages/Auth/change_password_page.dart';
 import 'package:healthcareapp_try1/Pages/Auth/forget_password_page.dart';
 import 'package:healthcareapp_try1/Pages/Auth/login_page.dart';
@@ -65,6 +66,7 @@ void main() async {
         BlocProvider(
           create: (context) => HealthcareDetailsCubit(UserService()),
         ),
+        BlocProvider(create: (context) => TestBloc(UserService())),
         RepositoryProvider<UserService>(create: (_) => UserService()),
       ],
       child: MainApp(isLoggedIn: isLoggedIn),

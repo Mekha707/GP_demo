@@ -7,7 +7,6 @@ import 'package:healthcareapp_try1/Bloc/User_Bloc/DoctorBloc/doctor_event.dart';
 import 'package:healthcareapp_try1/Bloc/User_Bloc/DoctorBloc/doctor_state.dart';
 import 'package:healthcareapp_try1/Buttons/buttons.dart';
 import 'package:healthcareapp_try1/Buttons/filter_button.dart';
-import 'package:healthcareapp_try1/Models/Users_Models/enums.dart';
 import 'package:healthcareapp_try1/Pages/Booking/healtcare_provider.dart';
 import 'package:healthcareapp_try1/Widgets/custom_loader1.dart';
 import 'package:healthcareapp_try1/Widgets/medical_staff_cards.dart';
@@ -109,14 +108,13 @@ class _DoctorPage extends State<DoctorPage> {
                   sliver: isFilterd
                       ? SliverToBoxAdapter(
                           child: SearchForDoctor(
-                            bookingType: BookingType.clinic,
                             onFilterChanged:
                                 (name, specialty, location, serviceType) {
                                   context.read<DoctorsBloc>().add(
                                     FilterDoctors(
                                       name: name,
                                       specialtyId: specialty?.id,
-                                      cityName: specialty == null ? null : name,
+                                      cityName: location,
                                       serviceType: serviceType.toString(),
                                     ),
                                   );

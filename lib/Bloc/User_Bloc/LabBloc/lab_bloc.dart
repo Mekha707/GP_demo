@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:healthcareapp_try1/API/user_service.dart';
 import 'package:healthcareapp_try1/Bloc/User_Bloc/LabBloc/lab_event.dart';
 import 'package:healthcareapp_try1/Bloc/User_Bloc/LabBloc/lab_state.dart';
+import 'package:healthcareapp_try1/Models/Users_Models/lab_model.dart';
 
 class LabsBloc extends Bloc<LabsEvent, LabsState> {
   final UserService _labService;
@@ -22,12 +23,18 @@ class LabsBloc extends Bloc<LabsEvent, LabsState> {
     _currentPage = 1;
 
     try {
-      final result = await _labService.getLabs(page: _currentPage);
+      // الـ result هنا نوعه List<LabModel> مش Object
+      final List<LabModel> result = await _labService.getLabs(
+        page: _currentPage,
+      );
+
       emit(
         LabsLoaded(
-          allLabs: result.items,
-          filteredLabs: result.items,
-          hasNextPage: result.hasNextPage,
+          allLabs: result, // استخدم result مباشرة
+          filteredLabs: result, // استخدم result مباشرة
+          // بما إنها قائمة مباشرة، ممكن تحدد الـ hasNextPage بناءً على طول القائمة
+          // مثلاً لو الـ API بيبعت 10 في الصفحة:
+          hasNextPage: result.length >= 10,
         ),
       );
     } on DioException catch (e) {
@@ -39,23 +46,26 @@ class LabsBloc extends Bloc<LabsEvent, LabsState> {
 
   Future<void> _onLoadMore(LoadMoreLabs event, Emitter<LabsState> emit) async {
     final current = state;
-    if (current is! LabsLoaded ||
-        !current.hasNextPage ||
-        current.isLoadingMore) {
+    if (current is! LabsLoaded || !current.hasNextPage || current.isLoadingMore)
       return;
-    }
 
     emit(current.copyWith(isLoadingMore: true));
     _currentPage++;
 
     try {
+      // تعديل هنا كمان: شيل .items
       final result = await _labService.getLabs(page: _currentPage);
-      final updatedAll = [...current.allLabs, ...result.items];
+
+      final updatedAll = [
+        ...current.allLabs,
+        ...result,
+      ]; // دمج القائمة الجديدة مباشرة
+
       emit(
         current.copyWith(
           allLabs: updatedAll,
           filteredLabs: updatedAll,
-          hasNextPage: result.hasNextPage,
+          hasNextPage: result.length >= 10, // تحديث الحالة
           isLoadingMore: false,
         ),
       );
@@ -72,9 +82,9 @@ class LabsBloc extends Bloc<LabsEvent, LabsState> {
       final result = await _labService.getLabs(page: _currentPage);
       emit(
         LabsLoaded(
-          allLabs: result.items,
-          filteredLabs: result.items,
-          hasNextPage: result.hasNextPage,
+          allLabs: result,
+          filteredLabs: result,
+          hasNextPage: result.length >= 10,
         ),
       );
     } on DioException catch (e) {
@@ -82,25 +92,28 @@ class LabsBloc extends Bloc<LabsEvent, LabsState> {
     }
   }
 
-  void _onFilter(FilterLabs event, Emitter<LabsState> emit) {
-    final current = state;
-    if (current is! LabsLoaded) return;
+  Future<void> _onFilter(FilterLabs event, Emitter<LabsState> emit) async {
+    emit(LabsLoading());
+    try {
+      final List<LabModel> labs = await _labService.getLabs(
+        page: 1,
+        name: event.name,
+        location: event.location,
+        testIds: event.testIds,
+      );
 
-    final filtered = current.allLabs.where((lab) {
-      final matchName =
-          event.name == null ||
-          event.name!.isEmpty ||
-          lab.name.toLowerCase().contains(event.name!.toLowerCase());
-
-      final matchLocation =
-          event.location == null ||
-          event.location!.isEmpty ||
-          lab.address.toLowerCase().contains(event.location!.toLowerCase());
-
-      return matchName && matchLocation;
-    }).toList();
-
-    emit(current.copyWith(filteredLabs: filtered));
+      emit(
+        LabsLoaded(
+          allLabs: labs,
+          filteredLabs: labs,
+          hasNextPage: labs.length >= 10,
+        ),
+      );
+    } catch (e) {
+      // السطر ده هيخليكي تشوفي المشكلة الحقيقية في الـ Debug Console
+      print("Filter Error Details: $e");
+      emit(LabsError("فشل البحث: $e"));
+    }
   }
 
   String _handleDioError(DioException e) {

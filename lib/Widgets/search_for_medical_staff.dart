@@ -7,18 +7,23 @@ import 'package:animated_custom_dropdown/custom_dropdown.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:healthcareapp_try1/Bloc/Auth_Bloc/CityCubit/city_cubit.dart';
+import 'package:healthcareapp_try1/Bloc/User_Bloc/LabBloc/lab_bloc.dart';
+import 'package:healthcareapp_try1/Bloc/User_Bloc/LabBloc/lab_event.dart';
 import 'package:healthcareapp_try1/Bloc/User_Bloc/NurseBloc/nurse_bloc.dart';
 import 'package:healthcareapp_try1/Bloc/User_Bloc/NurseBloc/nurse_event.dart';
 import 'package:healthcareapp_try1/Bloc/User_Bloc/SpecialtyBloc/specialty_bloc.dart';
 import 'package:healthcareapp_try1/Bloc/User_Bloc/SpecialtyBloc/specialty_state.dart';
+import 'package:healthcareapp_try1/Bloc/User_Bloc/Tests_Bloc/test_bloc.dart';
+import 'package:healthcareapp_try1/Bloc/User_Bloc/Tests_Bloc/test_events.dart';
 import 'package:healthcareapp_try1/Models/Auth_Models/location_model.dart';
 import 'package:healthcareapp_try1/Models/Users_Models/enums.dart';
 import 'package:healthcareapp_try1/Models/Users_Models/specialty_model.dart';
 import 'package:healthcareapp_try1/Widgets/service_type_widget.dart';
+import 'package:healthcareapp_try1/Widgets/tests_dropdown.dart';
 
-// Nurse
-class SearchForNurse extends StatefulWidget {
-  const SearchForNurse({
+// Nurse && Lab
+class SearchForNurseAndLab extends StatefulWidget {
+  const SearchForNurseAndLab({
     super.key,
     required this.medicalStaff,
     required this.onFilterChanged,
@@ -28,37 +33,35 @@ class SearchForNurse extends StatefulWidget {
   onFilterChanged; // الدالة المرسلة
 
   @override
-  State<SearchForNurse> createState() => _SearchForNurse();
+  State<SearchForNurseAndLab> createState() => _SearchForNurseAndLab();
 }
 
-class _SearchForNurse extends State<SearchForNurse> {
+class _SearchForNurseAndLab extends State<SearchForNurseAndLab> {
   // أضف هذا السطر مع تعريف المتغيرات في البداية
   final _cityController = SingleSelectController<String?>(null);
   String? _selectedCity;
   Timer? _debounce;
-
-  // تعريف المتغير الذي سيحمل القيمة المختارة
+  List<String> selectedTestIds = [];
   String _searchName = "";
   Specialty? _selectedSpecialty;
 
   @override
   void initState() {
     super.initState();
-    context.read<CitiesCubit>().getCities();
+    // تأكدي أن الـ Cubit موجود في الـ Context
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<CitiesCubit>().getCities();
+      context.read<TestBloc>().add(FetchLabTests());
+    });
   }
 
   void _onSearchChanged(String query) {
-    _searchName = query; // تحديث القيمة محلياً فوراً
+    _searchName = query;
 
     if (_debounce?.isActive ?? false) _debounce!.cancel();
     _debounce = Timer(const Duration(milliseconds: 700), () {
-      // إرسال للـ Bloc مباشرة من هنا
-      context.read<NursesBloc>().add(
-        FilterNurses(name: query, cityName: _selectedCity),
-      );
-
-      // إبلاغ الأب (بدون ما يغير حالته لو مش محتاج)
-      widget.onFilterChanged(query, _selectedSpecialty, _selectedCity);
+      // نستخدم الدالة الموحدة بدل كتابة منطق الـ Bloc هنا
+      _updateFilters();
     });
   }
 
@@ -68,16 +71,30 @@ class _SearchForNurse extends State<SearchForNurse> {
     super.dispose();
   }
 
-  // دالة مساعدة لتحديث الأب
   void _updateFilters() {
+    if (widget.medicalStaff == MedicalStaff.lab) {
+      // إرسال لـ LabsBloc
+      context.read<LabsBloc>().add(
+        FilterLabs(
+          name: _searchName,
+          location: _selectedCity,
+          testIds: selectedTestIds,
+        ),
+      );
+    } else if (widget.medicalStaff == MedicalStaff.nurse) {
+      // إرسال لـ NursesBloc
+      context.read<NursesBloc>().add(
+        FilterNurses(
+          name: _searchName,
+          cityName:
+              _selectedCity, // تأكد إن الاسم في الـ Event هو cityName أو location
+        ),
+      );
+    }
+
+    // إبلاغ الـ Parent بالتحديث (اختياري حسب حاجتك)
     widget.onFilterChanged(_searchName, _selectedSpecialty, _selectedCity);
   }
-
-  //  تعريف القائمة التي تحتوي على الـ Objects
-  final List<LocationModel> _locations = [
-    LocationModel("Cairo", "Egypt", Icons.location_city),
-    LocationModel("Riyadh", "KSA", Icons.location_on),
-  ];
 
   @override
   Widget build(BuildContext context) {
@@ -148,24 +165,32 @@ class _SearchForNurse extends State<SearchForNurse> {
           ),
           const SizedBox(height: 12),
 
-          // Specialty Dropdown (يمكنك استبداله بـ TextField مبدئياً)
-          (widget.medicalStaff == MedicalStaff.lab ||
-                  widget.medicalStaff == MedicalStaff.nurse)
-              ? SizedBox(height: 3)
-              : Column(
+          // Test Dropdown (يظهر فقط لو المستخدم بيبحث عن Lab)
+          widget.medicalStaff == MedicalStaff.lab
+              ? Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      "Specialty",
+                      "Lab Test ",
                       style: TextStyle(
                         color: Colors.grey.shade800,
                         fontFamily: 'Agency',
                       ),
                     ),
-                    SizedBox(height: 5),
+                    const SizedBox(height: 5),
+                    TestDropdownScreen(
+                      onTestsChanged: (tests) {
+                        setState(() {
+                          // بنجمع أسامي التحاليل في قائمة نصوص عشان نبعتها للـ API
+                          selectedTestIds = tests.map((e) => e.id).toList();
+                          _updateFilters();
+                        });
+                      },
+                    ),
                     const SizedBox(height: 12),
                   ],
-                ),
+                )
+              : const SizedBox.shrink(),
 
           // Location
           Text(
@@ -258,12 +283,7 @@ class _SearchForNurse extends State<SearchForNurse> {
 
 // Doctor
 class SearchForDoctor extends StatefulWidget {
-  const SearchForDoctor({
-    super.key,
-    required this.bookingType,
-    required this.onFilterChanged,
-  });
-  final BookingType bookingType;
+  const SearchForDoctor({super.key, required this.onFilterChanged});
   final Function(
     String name,
     Specialty? specialty,
@@ -583,7 +603,7 @@ class _SearchForDoctor extends State<SearchForDoctor> {
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    selectedItem,
+                    selectedItem ?? 'Select City',
                     style: const TextStyle(fontSize: 12, fontFamily: 'Agency'),
                     overflow: TextOverflow.ellipsis,
                   ),
