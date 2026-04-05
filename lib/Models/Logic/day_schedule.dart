@@ -7,18 +7,13 @@ class DaySchedule {
   final List<TimeSlot> slots;
 
   DaySchedule({required this.date, required this.day, required this.slots});
-
   factory DaySchedule.fromJson(Map<String, dynamic> json) {
+    final rawSlots = (json['slots'] ?? json['shifts']) as List?;
+
     return DaySchedule(
-      // 1. استخدام ?? '' للحماية من الـ Null في النصوص
       date: json['date'] ?? '',
       day: json['day'] ?? '',
-
-      slots:
-          (json['shifts'] as List?)
-              ?.map((e) => TimeSlot.fromJson(e))
-              .toList() ??
-          [],
+      slots: rawSlots?.map((e) => TimeSlot.fromJson(e)).toList() ?? [],
     );
   }
 }

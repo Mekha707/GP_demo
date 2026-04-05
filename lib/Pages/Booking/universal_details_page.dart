@@ -1,9 +1,12 @@
-// ignore_for_file: deprecated_member_use, file_names, avoid_print
+// ignore_for_file: deprecated_member_use, file_names, avoid_print, dead_code, unnecessary_null_comparison
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:healthcareapp_try1/Models/Booking_Models/test_model.dart';
+import 'package:healthcareapp_try1/Models/DetailsModel.dart/doctor_details_model.dart';
+import 'package:healthcareapp_try1/Models/DetailsModel.dart/nurse_details_model.dart';
+import 'package:healthcareapp_try1/Models/Users_Models/lab_model.dart';
 import 'package:healthcareapp_try1/Models/Users_Models/nurse_model.dart';
 import 'package:intl/intl.dart';
 import 'package:healthcareapp_try1/API/user_service.dart';
@@ -168,7 +171,9 @@ class _ProviderDetailsViewState extends State<_ProviderDetailsView> {
 
           if (state is DetailsLoaded) {
             final data = state.providerData;
-            print("SLOTS: ${data.slots}");
+            if (data is DoctorDetailsModel || data is NurseDetailsModel) {
+              print("SLOTS: ${data.slots}");
+            }
             print("TYPE: ${widget.provider.providerType}");
             print("SERVICE: $selectedService");
             return SingleChildScrollView(
@@ -213,7 +218,9 @@ class _ProviderDetailsViewState extends State<_ProviderDetailsView> {
                         const SizedBox(height: 10),
 
                         if (selectedService != "" &&
-                            widget.provider.providerType != "Lab") ...[
+                            widget.provider.providerType != "Lab" &&
+                            (data is DoctorDetailsModel ||
+                                data is NurseDetailsModel)) ...[
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
@@ -546,74 +553,144 @@ class _ProviderDetailsViewState extends State<_ProviderDetailsView> {
     );
   }
 
+  // Widget _buildFeesSection(BuildContext context, dynamic data) {
+  //   List<Widget> feeCards = [];
+  //   final provider = widget.provider; // اختصار
+
+  //   // 1. الكارت الأساسي حسب النوع
+  //   if (provider is Doctor) {
+  //     feeCards.add(
+  //       _buildFeeCard(
+  //         "Clinic Visit",
+  //         provider.mainFee,
+  //         FontAwesomeIcons.hospital,
+  //         data,
+  //       ),
+  //     );
+
+  //     // 3. خيار أونلاين إذا مسموح
+  //     if (provider.allowOnline) {
+  //       feeCards.add(const SizedBox(width: 10));
+  //       feeCards.add(
+  //         _buildFeeCard("Online", 150.0, FontAwesomeIcons.video, data),
+  //       );
+  //     }
+  //   } else if (provider is Nurse) {
+  //     // الممرض
+  //     feeCards.add(
+  //       _buildFeeCard(
+  //         "Home Visit",
+  //         provider.visitFee,
+  //         FontAwesomeIcons.house,
+  //         data,
+  //       ),
+  //     );
+
+  //     // إضافة خيار Hourly Rate
+  //     feeCards.add(const SizedBox(width: 10));
+  //     feeCards.add(
+  //       _buildFeeCard(
+  //         "Hourly Rate",
+  //         provider.hourPrice,
+  //         FontAwesomeIcons.clock,
+  //         data,
+  //       ),
+  //     );
+  //   } else if (provider is LabModel) {
+  //     // المعمل
+  //     final labDetails =
+  //         data as LabDetailsModel; // من المفترض data يكون LabDetailsModel
+  //     feeCards.add(
+  //       _buildFeeCard(
+  //         "Home Visit",
+  //         labDetails.homeVisitFee,
+  //         FontAwesomeIcons.house,
+  //         data,
+  //       ),
+  //     );
+
+  //     feeCards.add(const SizedBox(width: 10));
+  //     feeCards.add(
+  //       _buildFeeCard("Lab Visit", null, FontAwesomeIcons.flask, data),
+  //     );
+  //   } else {
+  //     // fallback لأي نوع غير متوقع
+  //     feeCards.add(
+  //       _buildFeeCard("Service", null, FontAwesomeIcons.handPointer, data),
+  //     );
+  //   }
+
+  //   return Row(children: feeCards);
+  // }
+
   Widget _buildFeesSection(BuildContext context, dynamic data) {
     List<Widget> feeCards = [];
-    final type = widget.provider.providerType;
+    final provider = widget.provider; // اختصار
 
-    // 1. الكارت الأساسي
-    if (type == "Doctor") {
+    // 1. الكارت الأساسي حسب النوع
+    if (provider is Doctor) {
       feeCards.add(
         _buildFeeCard(
           "Clinic Visit",
-          widget.provider.mainFee,
+          provider.mainFee,
           FontAwesomeIcons.hospital,
           data,
         ),
       );
-    } else if (widget.provider is Nurse) {
-      final nurse = widget.provider as Nurse;
 
-      feeCards.add(
-        _buildFeeCard(
-          "Home Visit",
-          nurse.visitFee,
-          FontAwesomeIcons.house,
-          data,
-        ),
-      );
-    } else if (type == "Lab") {
-      final labDetails = data as LabDetailsModel;
-      feeCards.add(
-        _buildFeeCard(
-          "Home Visit",
-          labDetails.homeVisitFee,
-          FontAwesomeIcons.house,
-          data,
-        ),
-      );
-    }
-
-    // 2. خيارات إضافية للممرض
-    if (type == "Nurse") {
-      // ✅ التصحيح هنا أيضاً: استخدام الكائن الصحيح
-      final nurse = widget.provider as Nurse;
-      feeCards.add(const SizedBox(width: 10));
-      feeCards.add(
-        _buildFeeCard(
-          "Hourly Rate",
-          nurse.hourPrice,
-          FontAwesomeIcons.clock,
-          data,
-        ),
-      );
-    }
-
-    // 3. خيارات إضافية للدكتور (أونلاين)
-    if (widget.provider is Doctor) {
-      final doctor = widget.provider as Doctor;
-      if (doctor.allowOnline) {
+      // خيار أونلاين إذا مسموح
+      if (provider.allowOnline) {
         feeCards.add(const SizedBox(width: 10));
         feeCards.add(
           _buildFeeCard("Online", 150.0, FontAwesomeIcons.video, data),
         );
       }
-    }
+    } else if (provider is Nurse) {
+      // الممرض
+      feeCards.add(
+        _buildFeeCard(
+          "Home Visit",
+          provider.visitFee,
+          FontAwesomeIcons.house,
+          data,
+        ),
+      );
 
-    // 4. خيار إضافي للمعمل
-    if (type == "Lab") {
+      // إضافة خيار Hourly Rate
+      feeCards.add(const SizedBox(width: 10));
+      feeCards.add(
+        _buildFeeCard(
+          "Hourly Rate",
+          provider.hourPrice,
+          FontAwesomeIcons.clock,
+          data,
+        ),
+      );
+    } else if (provider is LabModel) {
+      // المعمل
+      final labDetails =
+          data as LabDetailsModel; // من المفترض data يكون LabDetailsModel
+
+      // خيار Home Visit إذا متاح
+      if (labDetails.homeVisitFee != null) {
+        feeCards.add(
+          _buildFeeCard(
+            "Home Visit",
+            labDetails.homeVisitFee,
+            FontAwesomeIcons.house,
+            data,
+          ),
+        );
+      }
+
       feeCards.add(const SizedBox(width: 10));
       feeCards.add(
         _buildFeeCard("Lab Visit", null, FontAwesomeIcons.flask, data),
+      );
+    } else {
+      // fallback لأي نوع غير متوقع
+      feeCards.add(
+        _buildFeeCard("Service", null, FontAwesomeIcons.handPointer, data),
       );
     }
 
