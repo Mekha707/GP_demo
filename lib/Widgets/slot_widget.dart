@@ -133,6 +133,43 @@ class _SlotsSectionState extends State<SlotsSection> {
     );
   }
 
+  // Widget _buildSlotsGrid() {
+  //   final day = _currentDay;
+  //   if (day == null) return const SizedBox();
+
+  //   final visibleSlots = widget.isNurse
+  //       ? day.slots.where((s) => !s.isBooked).toList()
+  //       : day.slots;
+
+  //   if (visibleSlots.isEmpty) {
+  //     return Center(
+  //       child: Padding(
+  //         padding: EdgeInsets.all(24),
+  //         child: Text(
+  //           widget.isNurse ? 'No available slots' : 'No slots for this day',
+  //           style: TextStyle(color: Colors.grey.shade800, fontFamily: 'Agency'),
+  //         ),
+  //       ),
+  //     );
+  //   }
+
+  //   return Padding(
+  //     padding: const EdgeInsets.symmetric(horizontal: 16),
+  //     child: GridView.builder(
+  //       shrinkWrap: true,
+  //       physics: const NeverScrollableScrollPhysics(),
+  //       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+  //         crossAxisCount: 3,
+  //         crossAxisSpacing: 8,
+  //         mainAxisSpacing: 8,
+  //         childAspectRatio: 1.1,
+  //       ),
+  //       itemCount: visibleSlots.length,
+  //       itemBuilder: (context, index) => _buildSlotCard(visibleSlots[index]),
+  //     ),
+  //   );
+  // }
+
   Widget _buildSlotsGrid() {
     final day = _currentDay;
     if (day == null) return const SizedBox();
@@ -144,7 +181,7 @@ class _SlotsSectionState extends State<SlotsSection> {
     if (visibleSlots.isEmpty) {
       return Center(
         child: Padding(
-          padding: EdgeInsets.all(24),
+          padding: const EdgeInsets.all(24),
           child: Text(
             widget.isNurse ? 'No available slots' : 'No slots for this day',
             style: TextStyle(color: Colors.grey.shade800, fontFamily: 'Agency'),
@@ -156,6 +193,8 @@ class _SlotsSectionState extends State<SlotsSection> {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: GridView.builder(
+        // ✅ أضف هذا السطر لضمان تحديث الـ Grid فور تغيير اليوم
+        key: ValueKey('day_index_$_selectedDayIndex'),
         shrinkWrap: true,
         physics: const NeverScrollableScrollPhysics(),
         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(

@@ -1,4 +1,4 @@
-// ignore_for_file: deprecated_member_use, file_names
+// ignore_for_file: deprecated_member_use, file_names, avoid_print
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -168,6 +168,9 @@ class _ProviderDetailsViewState extends State<_ProviderDetailsView> {
 
           if (state is DetailsLoaded) {
             final data = state.providerData;
+            print("SLOTS: ${data.slots}");
+            print("TYPE: ${widget.provider.providerType}");
+            print("SERVICE: $selectedService");
             return SingleChildScrollView(
               controller: _scrollController,
               child: Column(
@@ -209,7 +212,8 @@ class _ProviderDetailsViewState extends State<_ProviderDetailsView> {
                         _buildFeesSection(context, data),
                         const SizedBox(height: 10),
 
-                        if (selectedService != "") ...[
+                        if (selectedService != "" &&
+                            widget.provider.providerType != "Lab") ...[
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
@@ -556,9 +560,9 @@ class _ProviderDetailsViewState extends State<_ProviderDetailsView> {
           data,
         ),
       );
-    } else if (type == "Nurse") {
-      // ✅ التصحيح: نحول الكائن الأساسي widget.provider وليس النص
+    } else if (widget.provider is Nurse) {
       final nurse = widget.provider as Nurse;
+
       feeCards.add(
         _buildFeeCard(
           "Home Visit",
