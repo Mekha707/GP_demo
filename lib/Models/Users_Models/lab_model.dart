@@ -12,6 +12,9 @@ class LabModel extends HealthcareProvider {
   final int ratingsCount;
   @override
   final String profilePictureUrl;
+  final List<String>? matchedTestsNames;
+  final int? matchedTestsCount;
+  final int? totalRequestedTests;
 
   LabModel({
     required this.id,
@@ -20,6 +23,9 @@ class LabModel extends HealthcareProvider {
     required this.rating,
     required this.ratingsCount,
     required this.profilePictureUrl,
+    this.matchedTestsCount,
+    this.totalRequestedTests,
+    this.matchedTestsNames,
   });
 
   factory LabModel.fromJson(Map<String, dynamic> json) {
@@ -30,6 +36,10 @@ class LabModel extends HealthcareProvider {
       rating: (json['rating'] as num).toDouble(),
       ratingsCount: json['ratingsCount'],
       profilePictureUrl: json['profilePictureUrl'],
+      matchedTestsNames: List<String>.from(json['matchedTestsNames'] ?? []),
+      // استقبال القيم الجديدة من الـ JSON ✅
+      matchedTestsCount: json['matchedTestsCount'] ?? 0,
+      totalRequestedTests: json['totalRequestedTests'] ?? 0,
     );
   }
 

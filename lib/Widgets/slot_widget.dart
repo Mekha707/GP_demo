@@ -1,4 +1,6 @@
 // widgets/slots_section.dart
+// ignore_for_file: deprecated_member_use
+
 import 'package:flutter/material.dart';
 import 'package:healthcareapp_try1/Models/Logic/day_schedule.dart';
 import 'package:healthcareapp_try1/Models/Logic/time_slot.dart';
@@ -22,6 +24,7 @@ class SlotsSection extends StatefulWidget {
 class _SlotsSectionState extends State<SlotsSection> {
   int _selectedDayIndex = 0;
   String? _selectedSlotId;
+  String? _selectedHour; // لتخزين الساعة المختارة من الـ Dropdown
 
   DaySchedule? get _currentDay =>
       widget.slots.isEmpty ? null : widget.slots[_selectedDayIndex];
@@ -47,6 +50,7 @@ class _SlotsSectionState extends State<SlotsSection> {
         const SizedBox(height: 16),
         _buildSlotsLabel(),
         _buildSlotsGrid(),
+        if (widget.isNurse && _selectedSlotId != null) _buildHourChips(),
       ],
     );
   }
@@ -202,6 +206,7 @@ class _SlotsSectionState extends State<SlotsSection> {
           : () {
               setState(() {
                 _selectedSlotId = isSelected ? null : slot.id;
+                _selectedHour = null; // ✅ مهم جداً عشان يصفر الساعة القديمة
               });
               final day = _currentDay;
               if (!isSelected && day != null) {
@@ -271,5 +276,119 @@ class _SlotsSectionState extends State<SlotsSection> {
         ),
       ),
     );
+  }
+
+  Widget _buildHourChips() {
+    final day = _currentDay;
+    final selectedSlot = day?.slots.firstWhere((s) => s.id == _selectedSlotId);
+
+    if (selectedSlot == null) return const SizedBox.shrink();
+
+    // توليد قائمة الساعات (استخدم الميثود اللي عملناها قبل كده)
+    final hours = _generateHoursList(
+      selectedSlot.startTime,
+      selectedSlot.endTime,
+    );
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 16),
+            child: Text(
+              "Select Exact Hour",
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.bold,
+                fontFamily: 'Agency',
+                color: Colors.black87,
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            height: 45, // طول الـ Chip
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              itemCount: hours.length,
+              separatorBuilder: (_, __) => const SizedBox(width: 10),
+              itemBuilder: (context, index) {
+                final hour = hours[index];
+                final isHourSelected = _selectedHour == hour;
+
+                return GestureDetector(
+                  onTap: () {
+                    setState(() {
+                      _selectedHour = hour;
+                    });
+                    // إبلاغ الـ Parent بالاختيار
+                    widget.onSlotSelected(day!, selectedSlot);
+                  },
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      // تغيير الـ Background بناءً على الاختيار
+                      color: isHourSelected
+                          ? const Color(0xFF0861dd)
+                          : Colors.white,
+                      borderRadius: BorderRadius.circular(25),
+                      border: Border.all(
+                        color: isHourSelected
+                            ? const Color(0xFF0861dd)
+                            : Colors.grey.shade300,
+                        width: 1,
+                      ),
+                      boxShadow: isHourSelected
+                          ? [
+                              BoxShadow(
+                                color: const Color(0xFF0861dd).withOpacity(0.3),
+                                blurRadius: 8,
+                                offset: const Offset(0, 4),
+                              ),
+                            ]
+                          : [],
+                    ),
+                    child: Text(
+                      hour,
+                      style: TextStyle(
+                        fontFamily: 'Agency',
+                        fontSize: 14,
+                        fontWeight: isHourSelected
+                            ? FontWeight.bold
+                            : FontWeight.normal,
+                        color: isHourSelected ? Colors.white : Colors.black87,
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  List<String> _generateHoursList(String start, String end) {
+    try {
+      // بفرض إن الوقت جاي بصيغة "09:00" أو "14:30"
+      int startHour = int.parse(start.split(':')[0]);
+      int endHour = int.parse(end.split(':')[0]);
+
+      List<String> hours = [];
+      for (int i = startHour; i < endHour; i++) {
+        // تنسيق الساعة لشكل مقروء (مثلاً 09:00)
+        String formattedHour = "${i.toString().padLeft(2, '0')}:00";
+        hours.add(formattedHour);
+      }
+      return hours;
+    } catch (e) {
+      return ["Select Time"]; // Fallback في حالة وجود خطأ في الداتا
+    }
   }
 }

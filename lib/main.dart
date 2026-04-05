@@ -25,6 +25,7 @@ import 'package:healthcareapp_try1/Pages/Auth/login_page.dart';
 import 'package:healthcareapp_try1/Pages/Auth/register_step1.dart';
 import 'package:healthcareapp_try1/Pages/Auth/register_step2.dart';
 import 'package:healthcareapp_try1/Pages/Booking/booking_page.dart';
+import 'package:healthcareapp_try1/Pages/Booking/univrsal_paymend_page.dart';
 import 'package:healthcareapp_try1/Pages/Home/home_page1.dart';
 import 'package:healthcareapp_try1/Pages/Home/splash_page.dart';
 import 'package:healthcareapp_try1/Widgets/slide_route.dart';
@@ -132,6 +133,8 @@ class _MainAppState extends State<MainApp> {
             return slideRight2Left(ChangePasswordPage());
           case '/':
             return slideRight2Left(SplashScreen(isLoggedIn: widget.isLoggedIn));
+          case 'AppointmentDetails':
+            return slideRight2Left(UnivrsalPaymendPage());
           default:
             return slideRight2Left(LoginPage());
         }

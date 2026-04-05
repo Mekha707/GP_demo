@@ -603,7 +603,7 @@ class _SearchForDoctor extends State<SearchForDoctor> {
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    selectedItem ?? 'Select City',
+                    selectedItem,
                     style: const TextStyle(fontSize: 12, fontFamily: 'Agency'),
                     overflow: TextOverflow.ellipsis,
                   ),

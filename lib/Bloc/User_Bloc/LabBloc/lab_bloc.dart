@@ -1,4 +1,4 @@
-// ignore_for_file: unused_catch_clause
+// ignore_for_file: unused_catch_clause, avoid_print
 
 import 'package:dio/dio.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -46,8 +46,11 @@ class LabsBloc extends Bloc<LabsEvent, LabsState> {
 
   Future<void> _onLoadMore(LoadMoreLabs event, Emitter<LabsState> emit) async {
     final current = state;
-    if (current is! LabsLoaded || !current.hasNextPage || current.isLoadingMore)
+    if (current is! LabsLoaded ||
+        !current.hasNextPage ||
+        current.isLoadingMore) {
       return;
+    }
 
     emit(current.copyWith(isLoadingMore: true));
     _currentPage++;

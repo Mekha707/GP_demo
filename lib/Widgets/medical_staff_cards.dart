@@ -104,6 +104,28 @@ class _UniversalMedicalCardState extends State<UniversalMedicalCard> {
             const SizedBox(height: 8),
             const Divider(height: 1, thickness: 0.5),
             const SizedBox(height: 8),
+
+            if (widget.provider is LabModel) ...[
+              // نقوم بعمل Casting داخل نطاق الـ if فقط لضمان الأمان
+              (() {
+                final lab = widget.provider as LabModel;
+
+                // نتحقق هل المستخدم يبحث عن تحاليل معينة أم لا
+                if (lab.totalRequestedTests != null &&
+                    lab.totalRequestedTests! > 0) {
+                  return Column(
+                    children: [
+                      _buildMatchIndicator(lab),
+                      const SizedBox(height: 8),
+                      _buildMatchedTestsNames(lab),
+                      const SizedBox(height: 12),
+                    ],
+                  );
+                }
+                return const SizedBox.shrink();
+              }()),
+            ],
+
             _buildActionButton(),
           ],
         ),
@@ -113,28 +135,113 @@ class _UniversalMedicalCardState extends State<UniversalMedicalCard> {
 
   // --- Widgets مساعدة ---
 
-  Widget _buildLocationRow() {
-    // نستخدم address من الأب أو نتحقق من النوع
-    String address = "";
-    if (widget.provider is Doctor) {
-      address = (widget.provider as Doctor).address;
-      // ignore: dead_code
-    } else if (widget.provider is LabModel) {
-      address = (widget.provider as LabModel).address;
-    } else if (widget.provider is Nurse) {
-      address = (widget.provider as Nurse).city;
+  Widget _buildMatchIndicator(LabModel lab) {
+    // تجنب الخطأ إذا كانت القيم null
+    final matched = lab.matchedTestsCount ?? 0;
+    final total = lab.totalRequestedTests ?? 0;
+    bool isFullMatch = matched == total && total > 0;
+
+    return Container(
+      width: double.infinity, // ليمتد بعرض الكارت
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: isFullMatch ? const Color(0xFFE1F5EE) : Colors.blueGrey.shade50,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: isFullMatch
+              ? const Color(0xFFB2E2D1)
+              : Colors.blueGrey.shade100,
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            isFullMatch ? Icons.check_circle : Icons.biotech_rounded,
+            size: 16,
+            color: isFullMatch ? const Color(0xFF0F6E56) : Colors.blueGrey,
+          ),
+          const SizedBox(width: 8),
+          Text(
+            "Tests Availability: $matched / $total",
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+              color: isFullMatch
+                  ? const Color(0xFF0F6E56)
+                  : Colors.blueGrey.shade800,
+              fontFamily: 'Agency',
+            ),
+          ),
+          const Spacer(),
+          if (isFullMatch)
+            const Text(
+              "COMPLETE",
+              style: TextStyle(
+                fontSize: 9,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF0F6E56),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMatchedTestsNames(LabModel lab) {
+    if (lab.matchedTestsNames == null || lab.matchedTestsNames!.isEmpty) {
+      return const SizedBox.shrink();
     }
+
+    return SizedBox(
+      height: 30, // تحديد ارتفاع ثابت للـ Chips
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        itemCount: lab.matchedTestsNames!.length,
+        separatorBuilder: (_, __) => const SizedBox(width: 6),
+        itemBuilder: (context, index) {
+          return Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            decoration: BoxDecoration(
+              color: const Color(0xFFE0F2F1), // Teal خفيف جداً
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Center(
+              child: Text(
+                lab.matchedTestsNames![index],
+                style: const TextStyle(
+                  fontSize: 10,
+                  color: Colors.teal,
+                  fontWeight: FontWeight.bold,
+                  fontFamily: 'Agency',
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildLocationRow() {
+    // بما أنك قمت بعمل override لـ location في الـ LabModel،
+    // تأكد أن HealthcareProvider يحتوي أيضاً على getter اسمه location
+    String address = widget.provider.location;
 
     return Row(
       children: [
-        const Icon(Icons.location_on_outlined, size: 13, color: Colors.grey),
-        const SizedBox(width: 3),
+        Icon(
+          Icons.location_on_outlined,
+          size: 14,
+          color: color,
+        ), // استخدام لون النوع (أزرق/تيل)
+        const SizedBox(width: 4),
         Expanded(
           child: Text(
             address,
             style: TextStyle(
               color: Colors.grey.shade600,
-              fontSize: 11,
+              fontSize: 12,
               fontFamily: 'Agency',
             ),
             maxLines: 1,

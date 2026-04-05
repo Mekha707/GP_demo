@@ -225,10 +225,12 @@ class UserService {
         'PageSize': 10,
       };
 
-      if (name != null && name.isNotEmpty)
+      if (name != null && name.isNotEmpty) {
         queryParams['Search'] = name; // السيرفر بيحب كلمة Search غالباً
-      if (location != null && location.isNotEmpty)
+      }
+      if (location != null && location.isNotEmpty) {
         queryParams['City'] = location;
+      }
 
       // جربي تبعتيها بدون [] أولاً لو السيرفر Standard
       if (testIds != null && testIds.isNotEmpty) {

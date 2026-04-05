@@ -195,13 +195,21 @@ class _ProviderDetailsViewState extends State<_ProviderDetailsView> {
                         ),
                         const SizedBox(height: 15),
 
-                        if (widget.provider.providerType == "Lab")
+                        if (widget.provider.providerType == "Lab") ...[
                           _buildWorkingDaysSection(
                             data.workingDays,
                             data.openingTime,
                             data.closingTime,
-                          )
-                        else if (selectedService != "")
+                          ),
+                        ],
+
+                        const SizedBox(height: 15),
+                        _buildSectionTitle("Available Services"),
+                        const SizedBox(height: 15),
+                        _buildFeesSection(context, data),
+                        const SizedBox(height: 10),
+
+                        if (selectedService != "") ...[
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
@@ -220,12 +228,7 @@ class _ProviderDetailsViewState extends State<_ProviderDetailsView> {
                               ),
                             ],
                           ),
-
-                        const SizedBox(height: 15),
-                        _buildSectionTitle("Available Services"),
-                        const SizedBox(height: 15),
-                        _buildFeesSection(context, data),
-                        const SizedBox(height: 10),
+                        ],
 
                         // --- الجزء الجديد الخاص بالتحاليل (Tests) ---
                         if (widget.provider.providerType == "Lab" &&
@@ -405,125 +408,6 @@ class _ProviderDetailsViewState extends State<_ProviderDetailsView> {
     );
   }
 
-  Widget _buildWorkingDaysSection(
-    WorkingDays workingDays,
-    String opening, // نتوقع تنسيق "09:00"
-    String closing, // نتوقع تنسيق "22:00"
-  ) {
-    final String todayName = DateFormat('EEEE').format(DateTime.now());
-    final bool isNowOpen = _isCurrentlyOpen(
-      _checkIfOpenToday(workingDays, todayName),
-      opening,
-      closing,
-    );
-
-    final days = [
-      {'name': 'Saturday', 'isOpen': workingDays.isSaturdayOpen},
-      {'name': 'Sunday', 'isOpen': workingDays.isSundayOpen},
-      {'name': 'Monday', 'isOpen': workingDays.isMondayOpen},
-      {'name': 'Tuesday', 'isOpen': workingDays.isTuesdayOpen},
-      {'name': 'Wednesday', 'isOpen': workingDays.isWednesdayOpen},
-      {'name': 'Thursday', 'isOpen': workingDays.isThursdayOpen},
-      {'name': 'Friday', 'isOpen': workingDays.isFridayOpen},
-    ];
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            _buildSectionTitle("Working Hours"),
-            // Badge "Open Now"
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(
-                color: isNowOpen
-                    ? Colors.green.withOpacity(0.1)
-                    : Colors.red.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(30),
-              ),
-              child: Row(
-                children: [
-                  CircleAvatar(
-                    radius: 4,
-                    backgroundColor: isNowOpen ? Colors.green : Colors.red,
-                  ),
-                  const SizedBox(width: 6),
-                  Text(
-                    isNowOpen ? "Open Now" : "Closed Now",
-                    style: TextStyle(
-                      color: isNowOpen
-                          ? Colors.green.shade700
-                          : Colors.red.shade700,
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: Colors.grey.shade100),
-          ),
-          child: Column(
-            children: days.map((day) {
-              final bool isOpen = day['isOpen'] as bool;
-              final String name = day['name'] as String;
-              final bool isToday = name == todayName;
-
-              return Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 12,
-                ),
-                decoration: BoxDecoration(
-                  color: isToday
-                      ? Colors.teal.withOpacity(0.1) // 👈 الأزرق الفاتح
-                      : Colors.transparent,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Row(
-                  children: [
-                    Text(
-                      name,
-                      style: TextStyle(
-                        fontWeight: isToday
-                            ? FontWeight.bold
-                            : FontWeight.normal,
-                        fontFamily: 'Agency',
-                        color: isToday ? Colors.teal : Colors.black87,
-                      ),
-                    ),
-                    const Spacer(),
-                    isOpen
-                        ? Text(
-                            "${_formatTime(opening)} - ${_formatTime(closing)}",
-                            style: const TextStyle(fontWeight: FontWeight.w500),
-                          )
-                        : const Text(
-                            "Closed",
-                            style: TextStyle(
-                              color: Colors.red,
-                              fontFamily: 'Agency',
-                            ),
-                          ),
-                  ],
-                ),
-              );
-            }).toList(),
-          ),
-        ),
-      ],
-    );
-  }
-
   // دالة مساعدة بسيطة للتحقق من يوم اليوم
 
   Widget _buildHeader(BuildContext context) {
@@ -673,12 +557,13 @@ class _ProviderDetailsViewState extends State<_ProviderDetailsView> {
         ),
       );
     } else if (type == "Nurse") {
+      // ✅ التصحيح: نحول الكائن الأساسي widget.provider وليس النص
       final nurse = widget.provider as Nurse;
       feeCards.add(
         _buildFeeCard(
           "Home Visit",
           nurse.visitFee,
-          FontAwesomeIcons.home,
+          FontAwesomeIcons.house,
           data,
         ),
       );
@@ -688,7 +573,7 @@ class _ProviderDetailsViewState extends State<_ProviderDetailsView> {
         _buildFeeCard(
           "Home Visit",
           labDetails.homeVisitFee,
-          FontAwesomeIcons.home,
+          FontAwesomeIcons.house,
           data,
         ),
       );
@@ -696,7 +581,8 @@ class _ProviderDetailsViewState extends State<_ProviderDetailsView> {
 
     // 2. خيارات إضافية للممرض
     if (type == "Nurse") {
-      final nurse = widget.provider.providerType as Nurse;
+      // ✅ التصحيح هنا أيضاً: استخدام الكائن الصحيح
+      final nurse = widget.provider as Nurse;
       feeCards.add(const SizedBox(width: 10));
       feeCards.add(
         _buildFeeCard(
@@ -719,7 +605,7 @@ class _ProviderDetailsViewState extends State<_ProviderDetailsView> {
       }
     }
 
-    // 4. خيار إضافي للمعمل (زيارة المعمل نفسه)
+    // 4. خيار إضافي للمعمل
     if (type == "Lab") {
       feeCards.add(const SizedBox(width: 10));
       feeCards.add(
@@ -1106,6 +992,125 @@ class _ProviderDetailsViewState extends State<_ProviderDetailsView> {
           ),
         );
       },
+    );
+  }
+
+  Widget _buildWorkingDaysSection(
+    WorkingDays workingDays,
+    String opening, // نتوقع تنسيق "09:00"
+    String closing, // نتوقع تنسيق "22:00"
+  ) {
+    final String todayName = DateFormat('EEEE').format(DateTime.now());
+    final bool isNowOpen = _isCurrentlyOpen(
+      _checkIfOpenToday(workingDays, todayName),
+      opening,
+      closing,
+    );
+
+    final days = [
+      {'name': 'Saturday', 'isOpen': workingDays.isSaturdayOpen},
+      {'name': 'Sunday', 'isOpen': workingDays.isSundayOpen},
+      {'name': 'Monday', 'isOpen': workingDays.isMondayOpen},
+      {'name': 'Tuesday', 'isOpen': workingDays.isTuesdayOpen},
+      {'name': 'Wednesday', 'isOpen': workingDays.isWednesdayOpen},
+      {'name': 'Thursday', 'isOpen': workingDays.isThursdayOpen},
+      {'name': 'Friday', 'isOpen': workingDays.isFridayOpen},
+    ];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            _buildSectionTitle("Working Hours"),
+            // Badge "Open Now"
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: isNowOpen
+                    ? Colors.green.withOpacity(0.1)
+                    : Colors.red.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(30),
+              ),
+              child: Row(
+                children: [
+                  CircleAvatar(
+                    radius: 4,
+                    backgroundColor: isNowOpen ? Colors.green : Colors.red,
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    isNowOpen ? "Open Now" : "Closed Now",
+                    style: TextStyle(
+                      color: isNowOpen
+                          ? Colors.green.shade700
+                          : Colors.red.shade700,
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: Colors.grey.shade100),
+          ),
+          child: Column(
+            children: days.map((day) {
+              final bool isOpen = day['isOpen'] as bool;
+              final String name = day['name'] as String;
+              final bool isToday = name == todayName;
+
+              return Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
+                decoration: BoxDecoration(
+                  color: isToday
+                      ? Colors.teal.withOpacity(0.1) // 👈 الأزرق الفاتح
+                      : Colors.transparent,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Row(
+                  children: [
+                    Text(
+                      name,
+                      style: TextStyle(
+                        fontWeight: isToday
+                            ? FontWeight.bold
+                            : FontWeight.normal,
+                        fontFamily: 'Agency',
+                        color: isToday ? Colors.teal : Colors.black87,
+                      ),
+                    ),
+                    const Spacer(),
+                    isOpen
+                        ? Text(
+                            "${_formatTime(opening)} - ${_formatTime(closing)}",
+                            style: const TextStyle(fontWeight: FontWeight.w500),
+                          )
+                        : const Text(
+                            "Closed",
+                            style: TextStyle(
+                              color: Colors.red,
+                              fontFamily: 'Agency',
+                            ),
+                          ),
+                  ],
+                ),
+              );
+            }).toList(),
+          ),
+        ),
+      ],
     );
   }
 
