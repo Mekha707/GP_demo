@@ -5,12 +5,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:healthcareapp_try1/API/auth_service.dart';
+import 'package:healthcareapp_try1/API/profile_service.dart';
 import 'package:healthcareapp_try1/API/user_service.dart';
 import 'package:healthcareapp_try1/Bloc/Auth_Bloc/CityCubit/city_cubit.dart';
 import 'package:healthcareapp_try1/Bloc/Auth_Bloc/LoginBloc/login_bloc.dart';
 import 'package:healthcareapp_try1/Bloc/Auth_Bloc/Patient_Profile.dart/patient_profile_cubit.dart';
 import 'package:healthcareapp_try1/Bloc/Auth_Bloc/RegisterationBloc/register_bloc.dart';
 import 'package:healthcareapp_try1/Bloc/DetailsBoc/universal_details_cubit.dart';
+import 'package:healthcareapp_try1/Bloc/MyBookingBloc/mybooking_cubit.dart';
 import 'package:healthcareapp_try1/Bloc/NavigationBloc/navigation_bloc.dart';
 import 'package:healthcareapp_try1/Bloc/User_Bloc/DoctorBloc/doctor_bloc.dart';
 import 'package:healthcareapp_try1/Bloc/User_Bloc/LabBloc/lab_bloc.dart';
@@ -49,6 +51,10 @@ void main() async {
           create: (context) => DoctorsBloc(UserService()),
         ),
         BlocProvider<LabsBloc>(create: (context) => LabsBloc(UserService())),
+        BlocProvider<AppointmentsCubit>(
+          create: (context) => AppointmentsCubit(ProfileService()),
+        ),
+
         BlocProvider(
           create: (context) =>
               ProfileCubit(AuthService()), // تأكد من تمرير الـ Service الصحيح
@@ -135,7 +141,7 @@ class _MainAppState extends State<MainApp> {
         }
       },
 
-      initialRoute: 'Login',
+      initialRoute: 'Home',
     );
   }
 }

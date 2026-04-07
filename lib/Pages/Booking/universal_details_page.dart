@@ -1,4 +1,4 @@
-// ignore_for_file: deprecated_member_use, file_names, avoid_print, dead_code, unnecessary_null_comparison
+// ignore_for_file: deprecated_member_use, file_names, avoid_print, dead_code, unnecessary_null_comparison, unnecessary_to_list_in_spreads
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -126,7 +126,7 @@ class _ProviderDetailsViewState extends State<_ProviderDetailsView> {
       // 2. إضافة سعر الزيارة المنزلية إذا كانت هي الخدمة المختارة
       if (selectedService == "Home Visit") {
         // تأكد أن موديل LabDetailsModel يحتوي على حقل homeVisitPrice أو ما يشابهه
-        total += (labData.homeVisitFee ?? 0).toDouble();
+        total += (labData.homeVisitFee).toDouble();
       }
     }
     return total;
@@ -138,11 +138,11 @@ class _ProviderDetailsViewState extends State<_ProviderDetailsView> {
 
       switch (selectedService) {
         case "Clinic Visit":
-          return doctorDetails.clinicFee ?? 0;
+          return doctorDetails.clinicFee;
         case "Home Visit":
-          return doctorDetails.homeFee ?? 0;
+          return doctorDetails.homeFee;
         case "Online":
-          return doctorDetails.onlineFee ?? 0;
+          return doctorDetails.onlineFee;
         default:
           return 0;
       }
@@ -151,9 +151,9 @@ class _ProviderDetailsViewState extends State<_ProviderDetailsView> {
 
       switch (selectedService) {
         case "Home Visit":
-          return nurseDetails.homeVisitFee ?? 0;
+          return nurseDetails.homeVisitFee;
         case "Hourly Rate":
-          return nurseDetails.hourPrice ?? 0;
+          return nurseDetails.hourPrice;
         default:
           return 0;
       }
@@ -168,7 +168,7 @@ class _ProviderDetailsViewState extends State<_ProviderDetailsView> {
       }
 
       if (selectedService == "Home Visit") {
-        total += (labDetails.homeVisitFee ?? 0).toDouble();
+        total += (labDetails.homeVisitFee).toDouble();
       }
 
       return total;
@@ -181,7 +181,7 @@ class _ProviderDetailsViewState extends State<_ProviderDetailsView> {
     double total = 0.0;
 
     // سعر الخدمة المختارة (Home Visit مثلا)
-    total += (selectedService == "Home Visit" ? labData.homeVisitFee ?? 0 : 0);
+    total += (selectedService == "Home Visit" ? labData.homeVisitFee : 0);
 
     // سعر التحاليل المختارة
     for (var testId in selectedTests.values) {
@@ -568,7 +568,7 @@ class _ProviderDetailsViewState extends State<_ProviderDetailsView> {
                                   ),
                                   Text(
                                     selectedService == "Home Visit"
-                                        ? "\$${(data.homeVisitFee ?? 0).toStringAsFixed(2)}"
+                                        ? "\$${(data.homeVisitFee).toStringAsFixed(2)}"
                                         : "Free", // أو السعر الافتراضي للعيادة
                                     style: const TextStyle(
                                       fontSize: 14,

@@ -1,204 +1,3 @@
-// import 'package:flutter/material.dart';
-// import 'package:flutter_bloc/flutter_bloc.dart';
-// import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-// import 'package:healthcareapp_try1/API/logout_service.dart';
-// import 'package:healthcareapp_try1/Bloc/NavigationBloc/navigation_bloc.dart';
-// import 'package:healthcareapp_try1/Buttons/icons_heart_stet.dart';
-// import 'package:curved_navigation_bar/curved_navigation_bar.dart';
-// import 'package:healthcareapp_try1/Pages/Auth/change_password_page.dart';
-// import 'package:healthcareapp_try1/Pages/Booking/booking_page.dart';
-// import 'package:healthcareapp_try1/Pages/Home/ambulance_page.dart';
-// import 'package:healthcareapp_try1/Pages/Home/homepage_content.dart';
-
-// class HomePage extends StatelessWidget {
-//   const HomePage({super.key});
-
-//   @override
-//   Widget build(BuildContext context) {
-//     final size = MediaQuery.of(context).size;
-//     final bool isTablet = size.width > 600;
-
-//     // قائمة الصفحات
-//     final List<Widget> pages = [
-//       HomePageContent(),
-//       BookingPage(),
-//       const Center(child: Text("AI Medical Assistant")),
-//       const Center(child: Text("Health Community")),
-//       AmbulancePage(),
-//     ];
-
-//     return BlocBuilder<NavigationBloc, NavigationState>(
-//       builder: (context, state) {
-//         return Scaffold(
-//           extendBody: true,
-//           backgroundColor: Colors.grey[50],
-//           appBar: AppBar(
-//             backgroundColor: Colors.grey[50],
-//             automaticallyImplyLeading: false,
-//             elevation: 0,
-//             toolbarHeight: isTablet ? 80 : 70,
-//             title: Row(
-//               children: [
-//                 Iconheartstet(),
-//                 SizedBox(width: size.width * 0.03),
-//                 Padding(
-//                   padding: const EdgeInsets.only(top: 15, left: 10),
-//                   child: const Text(
-//                     "HealthCare",
-//                     style: TextStyle(color: Colors.black),
-//                   ),
-//                 ),
-//               ],
-//             ),
-//           ),
-
-//           endDrawer: Drawer(
-//             child: ListView(
-//               padding: EdgeInsets.zero,
-//               children: [
-//                 SizedBox(
-//                   height: 85,
-//                   child: DrawerHeader(
-//                     decoration: BoxDecoration(color: Color(0xff0861dd)),
-//                     child: Center(
-//                       child: Text(
-//                         "patient Name",
-//                         style: TextStyle(color: Colors.white, fontSize: 20),
-//                       ),
-//                     ),
-//                   ),
-//                 ),
-//                 ListTile(
-//                   leading: const Icon(Icons.person_outline),
-//                   title: const Text("Profile"),
-//                   onTap: () {
-//                     // 1. نقفل الـ Drawer الأول عشان ميفضلش مفتوح في الخلفية
-//                     Navigator.pop(context);
-
-//                     // 2. نروح لصفحة البروفايل كصفحة مستقلة
-//                     Navigator.push(
-//                       context,
-//                       MaterialPageRoute(builder: (context) => PatientProfilePage()),
-//                     );
-//                   },
-//                 ),
-//                 ListTile(
-//                   leading: Icon(Icons.calendar_month),
-//                   title: Text("My Booking"),
-//                   onTap: () {},
-//                 ),
-//                 ListTile(
-//                   leading: Icon(Icons.chat),
-//                   title: Text("My Conversations"),
-//                   onTap: () {},
-//                 ),
-//                 ListTile(
-//                   leading: Icon(Icons.lock),
-//                   title: Text("Change Password"),
-//                   onTap: () {
-//                     Navigator.pushReplacement(
-//                       context,
-//                       MaterialPageRoute(
-//                         builder: (context) => ChangePasswordPage(),
-//                       ),
-//                     );
-//                   },
-//                 ),
-//                 ListTile(
-//                   leading: Icon(Icons.logout),
-//                   title: Text("Logout"),
-//                   onTap: () async {
-//                     // 1. تصفير الـ NavigationBloc للعودة للتبويب الأول (Home)
-//                     context.read<NavigationBloc>().add(TabChanged(0));
-
-//                     // 2. تنفيذ عملية تسجيل الخروج (مسح الشيرد بريفرنس والانتقال لصفحة Login)
-//                     await AuthServiceLogout.logout(context);
-//                   },
-//                 ),
-//               ],
-//             ),
-//           ),
-
-//           // استخدام الحالة القادمة من البلوك لتحديد الصفحة
-//           body: SafeArea(
-//             bottom: false,
-//             child: AnimatedSwitcher(
-//               duration: const Duration(milliseconds: 50),
-//               child: pages[state.selectedIndex], // جلب الاندكس من الـ State
-//               transitionBuilder: (Widget child, Animation<double> animation) {
-//                 return FadeTransition(opacity: animation, child: child);
-//               },
-//             ),
-//           ),
-
-//           bottomNavigationBar: CurvedNavigationBar(
-//             // تأكد من ربط الـ index بالحالة
-//             index: state.selectedIndex,
-//             backgroundColor: Colors.transparent,
-//             color: const Color(0xff0861dd),
-//             buttonBackgroundColor: const Color(0xff0861dd),
-//             height: isTablet ? 75 : 50,
-//             items: <Widget>[
-//               Icon(Icons.home, color: Colors.white),
-//               Icon(Icons.calendar_today_rounded, color: Colors.white),
-//               Icon(Icons.smart_toy_sharp, color: Colors.white),
-//               Icon(Icons.supervised_user_circle_sharp, color: Colors.white),
-//               Icon(FontAwesomeIcons.truckMedical, color: Colors.white),
-//             ],
-//             onTap: (index) {
-//               // إرسال الأكشن للبلوك بدلاً من setState
-//               context.read<NavigationBloc>().add(TabChanged(index));
-//             },
-//           ),
-//         );
-//       },
-//     );
-//   }
-// }
-
-// class MainWrapper extends StatelessWidget {
-//   const MainWrapper({super.key});
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return BlocBuilder<NavigationBloc, NavigationState>(
-//       builder: (context, state) {
-//         return Scaffold(
-//           body: IndexedStack(
-//             index: state.selectedIndex,
-//             children: [
-//               HomePageContent(),
-//               BookingPage(),
-//               // ChatPage(),
-//               // ProfilePage(),
-//             ],
-//           ),
-//           bottomNavigationBar: BottomNavigationBar(
-//             currentIndex: state.selectedIndex,
-//             onTap: (index) {
-//               context.read<NavigationBloc>().add(TabChanged(index));
-//             },
-//             items: const [
-//               BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-//               BottomNavigationBarItem(
-//                 icon: Icon(Icons.calendar_today),
-//                 label: 'Booking',
-//               ),
-//               BottomNavigationBarItem(icon: Icon(Icons.chat), label: 'Chats'),
-//               BottomNavigationBarItem(
-//                 icon: Icon(Icons.person),
-//                 label: 'Profile',
-//               ),
-//             ],
-//           ),
-//         );
-//       },
-//     );
-//   }
-// }
-
-// ignore_for_file: avoid_print
-
 import 'dart:developer';
 
 import 'package:flutter/material.dart';
@@ -214,6 +13,7 @@ import 'package:healthcareapp_try1/Buttons/icons_heart_stet.dart';
 import 'package:curved_navigation_bar/curved_navigation_bar.dart';
 import 'package:healthcareapp_try1/Pages/Auth/change_password_page.dart';
 import 'package:healthcareapp_try1/Pages/Booking/booking_page.dart';
+import 'package:healthcareapp_try1/Pages/Booking/my_booking_page.dart';
 import 'package:healthcareapp_try1/Pages/Home/ambulance_page.dart';
 import 'package:healthcareapp_try1/Pages/Home/homepage_content.dart';
 import 'package:healthcareapp_try1/Pages/Home/profile_page.dart';
@@ -381,7 +181,12 @@ class _HomePageState extends State<HomePage> {
                         ),
                       ),
                     ),
-                    onTap: () {},
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => MyBookingPage()),
+                      );
+                    },
                   ),
                   ListTile(
                     leading: Icon(Icons.chat, color: Colors.grey.shade700),
