@@ -133,6 +133,31 @@ class UserService {
     }
   }
 
+  Future<void> bookDoctorAppointment({
+    required String doctorId,
+    required String doctorSlotId,
+    required String appointmentType,
+    required String token,
+    String? notes,
+    String? address,
+  }) async {
+    try {
+      await _dio.post(
+        'api/doctor-appointments',
+        data: {
+          'doctorId': doctorId,
+          'doctorSlotId': doctorSlotId,
+          'appointmentType': appointmentType,
+          'notes': notes,
+          'address': address,
+        },
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
   // --- Nurse Methods ---
   Future<PaginatedList<Nurse>> getNurses({
     int page = 1,
@@ -194,6 +219,35 @@ class UserService {
     } on DioException catch (e) {
       log("Dio Error: ${e.response?.statusCode} - ${e.response?.data}");
       throw "فشل تحميل التقييمات";
+    }
+  }
+
+  Future<void> bookNurseAppointment({
+    required String nurseId,
+    required String shiftId,
+    required String serviceType,
+    required String address,
+    required String token,
+    String? notes,
+    int? hours,
+    String? startTime,
+  }) async {
+    try {
+      await _dio.post(
+        'api/nurse-appointments',
+        data: {
+          'nurseId': nurseId,
+          'shiftId': shiftId,
+          'notes': notes,
+          'startTime': startTime,
+          'address': address,
+          'serviceType': serviceType,
+          'hours': hours,
+        },
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
+    } on DioException catch (e) {
+      throw _handleError(e);
     }
   }
 
@@ -296,6 +350,35 @@ class UserService {
     } on DioException catch (e) {
       log("Dio Error: ${e.response?.statusCode} - ${e.response?.data}");
       throw "Unable to Load Reviews";
+    }
+  }
+
+  Future<void> bookLabAppointment({
+    required String labId,
+    required String date,
+    required String appointmentType,
+    required List<String> labTestsIds,
+    required String token,
+    String? startTime,
+    String? notes,
+    String? address,
+  }) async {
+    try {
+      await _dio.post(
+        'api/lab-appointments',
+        data: {
+          'labId': labId,
+          'date': date,
+          'appointmentType': appointmentType,
+          'startTime': startTime,
+          'notes': notes,
+          'address': address,
+          'labTestsIds': labTestsIds,
+        },
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
+    } on DioException catch (e) {
+      throw _handleError(e);
     }
   }
 

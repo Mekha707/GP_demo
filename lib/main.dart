@@ -10,7 +10,6 @@ import 'package:healthcareapp_try1/Bloc/Auth_Bloc/CityCubit/city_cubit.dart';
 import 'package:healthcareapp_try1/Bloc/Auth_Bloc/LoginBloc/login_bloc.dart';
 import 'package:healthcareapp_try1/Bloc/Auth_Bloc/Patient_Profile.dart/patient_profile_cubit.dart';
 import 'package:healthcareapp_try1/Bloc/Auth_Bloc/RegisterationBloc/register_bloc.dart';
-import 'package:healthcareapp_try1/Bloc/BookingBloc/booking_bloc.dart';
 import 'package:healthcareapp_try1/Bloc/DetailsBoc/universal_details_cubit.dart';
 import 'package:healthcareapp_try1/Bloc/NavigationBloc/navigation_bloc.dart';
 import 'package:healthcareapp_try1/Bloc/User_Bloc/DoctorBloc/doctor_bloc.dart';
@@ -25,7 +24,6 @@ import 'package:healthcareapp_try1/Pages/Auth/login_page.dart';
 import 'package:healthcareapp_try1/Pages/Auth/register_step1.dart';
 import 'package:healthcareapp_try1/Pages/Auth/register_step2.dart';
 import 'package:healthcareapp_try1/Pages/Booking/booking_page.dart';
-import 'package:healthcareapp_try1/Pages/Booking/univrsal_paymend_page.dart';
 import 'package:healthcareapp_try1/Pages/Home/home_page1.dart';
 import 'package:healthcareapp_try1/Pages/Home/splash_page.dart';
 import 'package:healthcareapp_try1/Widgets/slide_route.dart';
@@ -51,7 +49,6 @@ void main() async {
           create: (context) => DoctorsBloc(UserService()),
         ),
         BlocProvider<LabsBloc>(create: (context) => LabsBloc(UserService())),
-        BlocProvider<BookingBloc>(create: (context) => BookingBloc()),
         BlocProvider(
           create: (context) =>
               ProfileCubit(AuthService()), // تأكد من تمرير الـ Service الصحيح
@@ -133,20 +130,12 @@ class _MainAppState extends State<MainApp> {
             return slideRight2Left(ChangePasswordPage());
           case '/':
             return slideRight2Left(SplashScreen(isLoggedIn: widget.isLoggedIn));
-          case 'AppointmentDetails':
-            return slideRight2Left(UnivrsalPaymendPage());
           default:
             return slideRight2Left(LoginPage());
         }
       },
 
-      initialRoute: 'Home',
+      initialRoute: 'Login',
     );
   }
 }
-
-//   عندما يريد المستخدم تسجيل الخروج في صفحة الاساسية مستقبلا، ستحتاج لتنفيذ هذا الكود:
-
-// final prefs = await SharedPreferences.getInstance();
-// await prefs.setBool('isLoggedIn', false); // أو prefs.clear() لمسح كل شيء
-// Navigator.pushReplacementNamed(context, 'LoginPage');

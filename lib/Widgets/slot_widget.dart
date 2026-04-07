@@ -1,4 +1,3 @@
-// widgets/slots_section.dart
 // ignore_for_file: deprecated_member_use
 
 import 'package:flutter/material.dart';
@@ -8,13 +7,19 @@ import 'package:healthcareapp_try1/Models/Logic/time_slot.dart';
 class SlotsSection extends StatefulWidget {
   final List<DaySchedule> slots;
   final bool isNurse;
+  final bool isLab;
+  final bool showChips;
+  final void Function(String hour)? onHourSelected;
   final void Function(DaySchedule day, TimeSlot slot) onSlotSelected;
 
   const SlotsSection({
     super.key,
     required this.slots,
     required this.onSlotSelected,
+    this.onHourSelected,
     this.isNurse = false,
+    this.isLab = false,
+    this.showChips = false,
   });
 
   @override
@@ -50,7 +55,7 @@ class _SlotsSectionState extends State<SlotsSection> {
         const SizedBox(height: 16),
         _buildSlotsLabel(),
         _buildSlotsGrid(),
-        if (widget.isNurse && _selectedSlotId != null) _buildHourChips(),
+        if (widget.showChips && _selectedSlotId != null) _buildHourChips(),
       ],
     );
   }
@@ -133,50 +138,12 @@ class _SlotsSectionState extends State<SlotsSection> {
     );
   }
 
-  // Widget _buildSlotsGrid() {
-  //   final day = _currentDay;
-  //   if (day == null) return const SizedBox();
-
-  //   final visibleSlots = widget.isNurse
-  //       ? day.slots.where((s) => !s.isBooked).toList()
-  //       : day.slots;
-
-  //   if (visibleSlots.isEmpty) {
-  //     return Center(
-  //       child: Padding(
-  //         padding: EdgeInsets.all(24),
-  //         child: Text(
-  //           widget.isNurse ? 'No available slots' : 'No slots for this day',
-  //           style: TextStyle(color: Colors.grey.shade800, fontFamily: 'Agency'),
-  //         ),
-  //       ),
-  //     );
-  //   }
-
-  //   return Padding(
-  //     padding: const EdgeInsets.symmetric(horizontal: 16),
-  //     child: GridView.builder(
-  //       shrinkWrap: true,
-  //       physics: const NeverScrollableScrollPhysics(),
-  //       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-  //         crossAxisCount: 3,
-  //         crossAxisSpacing: 8,
-  //         mainAxisSpacing: 8,
-  //         childAspectRatio: 1.1,
-  //       ),
-  //       itemCount: visibleSlots.length,
-  //       itemBuilder: (context, index) => _buildSlotCard(visibleSlots[index]),
-  //     ),
-  //   );
-  // }
-
   Widget _buildSlotsGrid() {
     final day = _currentDay;
     if (day == null) return const SizedBox();
 
-    final visibleSlots = widget.isNurse
-        ? day.slots.where((s) => !s.isBooked).toList()
-        : day.slots;
+    // لو الممرض، نظهر فقط slots الغير محجوزة
+    final visibleSlots = day.slots;
 
     if (visibleSlots.isEmpty) {
       return Center(
@@ -193,7 +160,6 @@ class _SlotsSectionState extends State<SlotsSection> {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: GridView.builder(
-        // ✅ أضف هذا السطر لضمان تحديث الـ Grid فور تغيير اليوم
         key: ValueKey('day_index_$_selectedDayIndex'),
         shrinkWrap: true,
         physics: const NeverScrollableScrollPhysics(),
@@ -211,54 +177,42 @@ class _SlotsSectionState extends State<SlotsSection> {
 
   Widget _buildSlotCard(TimeSlot slot) {
     final isSelected = slot.id == _selectedSlotId;
-    final isBooked = slot.isBooked;
 
-    String formatTime(String time) {
-      return time.length >= 5 ? time.substring(0, 5) : time;
-    }
+    // ✅ لو nurse نتعامل مع كل الـ slots كأنها غير محجوزة
+    final isBooked = (widget.isNurse) ? false : slot.isBooked;
 
-    Color bgColor;
-    Color borderColor;
-    Color timeColor;
-    Color subColor;
-
-    if (isBooked) {
-      bgColor = Colors.grey.shade200;
-      borderColor = Colors.grey.shade200;
-      timeColor = Colors.grey;
-      subColor = Colors.grey.shade400;
-    } else if (isSelected) {
-      bgColor = const Color(0xFF0861dd);
-      borderColor = const Color(0xFF0861dd);
-      timeColor = Colors.white;
-      subColor = Colors.white70;
-    } else {
-      bgColor = Colors.white;
-      borderColor = Colors.grey.shade300;
-      timeColor = Colors.black87;
-      subColor = Colors.grey.shade600;
-    }
+    String formatTime(String time) =>
+        time.length >= 5 ? time.substring(0, 5) : time;
 
     return GestureDetector(
-      onTap: isBooked
-          ? null
-          : () {
-              setState(() {
-                _selectedSlotId = isSelected ? null : slot.id;
-                _selectedHour = null; // ✅ مهم جداً عشان يصفر الساعة القديمة
-              });
-              final day = _currentDay;
-              if (!isSelected && day != null) {
-                widget.onSlotSelected(day, slot); // ✅ non-nullable
-              }
-            },
+      onTap: () {
+        setState(() {
+          _selectedSlotId = isSelected ? null : slot.id;
+          _selectedHour = null;
+        });
+        final day = _currentDay;
+        if (!isSelected && day != null) {
+          widget.onSlotSelected(day, slot);
+        }
+      },
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 150),
         padding: const EdgeInsets.all(10),
         decoration: BoxDecoration(
-          color: bgColor,
+          color: isBooked
+              ? Colors.grey.shade100
+              : isSelected
+              ? const Color(0xFF0861dd)
+              : Colors.white,
           borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: borderColor, width: 0.8),
+          border: Border.all(
+            color: isBooked
+                ? Colors.grey.shade300
+                : isSelected
+                ? const Color(0xFF0861dd)
+                : Colors.grey.shade300,
+            width: isSelected ? 2 : 0.8,
+          ),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -269,48 +223,75 @@ class _SlotsSectionState extends State<SlotsSection> {
               style: TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
-                color: timeColor,
+                color: isBooked
+                    ? Colors.grey.shade400
+                    : isSelected
+                    ? Colors.white
+                    : Colors.black87,
+                decoration: isBooked ? TextDecoration.lineThrough : null,
+                decorationColor: Colors.grey.shade400,
               ),
             ),
             const SizedBox(height: 2),
             Text(
               formatTime(slot.endTime),
-              style: TextStyle(fontSize: 11, color: subColor),
+              style: TextStyle(
+                fontSize: 11,
+                color: isBooked
+                    ? Colors.grey.shade400
+                    : isSelected
+                    ? Colors.white70
+                    : Colors.grey.shade600,
+              ),
             ),
             const SizedBox(height: 5),
-            widget.isNurse
-                ? SizedBox(height: 10)
-                : Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 6,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+              decoration: BoxDecoration(
+                color: isBooked
+                    ? Colors.red.shade100
+                    : isSelected
+                    ? Colors.white24
+                    : const Color(0xFFE1F5EE),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    isBooked
+                        ? Icons.block
+                        : isSelected
+                        ? Icons.check
+                        : Icons.circle,
+                    size: 7,
+                    color: isBooked
+                        ? Colors.red.shade400
+                        : isSelected
+                        ? Colors.white
+                        : const Color(0xFF0F6E56),
+                  ),
+                  const SizedBox(width: 3),
+                  Text(
+                    isBooked
+                        ? 'Booked'
+                        : isSelected
+                        ? 'Selected'
+                        : 'Free',
+                    style: TextStyle(
+                      fontSize: 9,
+                      fontWeight: FontWeight.w500,
+                      fontFamily: 'Agency',
                       color: isBooked
-                          ? const Color(0xFFFCEBEB)
+                          ? Colors.red.shade400
                           : isSelected
-                          ? Colors.white24
-                          : const Color(0xFFE1F5EE),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Text(
-                      isBooked
-                          ? 'Booked'
-                          : isSelected
-                          ? '✓ Selected'
-                          : 'Available',
-                      style: TextStyle(
-                        fontSize: 9,
-                        fontWeight: FontWeight.w500,
-                        fontFamily: 'Agency',
-                        color: isBooked
-                            ? const Color(0xFFA32D2D)
-                            : isSelected
-                            ? Colors.white
-                            : const Color(0xFF0F6E56),
-                      ),
+                          ? Colors.white
+                          : const Color(0xFF0F6E56),
                     ),
                   ),
+                ],
+              ),
+            ),
           ],
         ),
       ),
@@ -319,11 +300,19 @@ class _SlotsSectionState extends State<SlotsSection> {
 
   Widget _buildHourChips() {
     final day = _currentDay;
-    final selectedSlot = day?.slots.firstWhere((s) => s.id == _selectedSlotId);
+    if (day == null || _selectedSlotId == null) return const SizedBox.shrink();
+
+    // محاولة الحصول على الـ selectedSlot بطريقة null-safe
+    TimeSlot? selectedSlot;
+    try {
+      selectedSlot = day.slots.firstWhere((s) => s.id == _selectedSlotId);
+    } catch (e) {
+      selectedSlot = null;
+    }
 
     if (selectedSlot == null) return const SizedBox.shrink();
 
-    // توليد قائمة الساعات (استخدم الميثود اللي عملناها قبل كده)
+    // توليد قائمة الساعات
     final hours = _generateHoursList(
       selectedSlot.startTime,
       selectedSlot.endTime,
@@ -348,7 +337,7 @@ class _SlotsSectionState extends State<SlotsSection> {
           ),
           const SizedBox(height: 12),
           SizedBox(
-            height: 45, // طول الـ Chip
+            height: 45,
             child: ListView.separated(
               scrollDirection: Axis.horizontal,
               padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -363,15 +352,14 @@ class _SlotsSectionState extends State<SlotsSection> {
                     setState(() {
                       _selectedHour = hour;
                     });
-                    // إبلاغ الـ Parent بالاختيار
-                    widget.onSlotSelected(day!, selectedSlot);
+                    widget.onSlotSelected(day, selectedSlot!);
+                    widget.onHourSelected?.call(hour);
                   },
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 200),
                     padding: const EdgeInsets.symmetric(horizontal: 20),
                     alignment: Alignment.center,
                     decoration: BoxDecoration(
-                      // تغيير الـ Background بناءً على الاختيار
                       color: isHourSelected
                           ? const Color(0xFF0861dd)
                           : Colors.white,
@@ -412,6 +400,116 @@ class _SlotsSectionState extends State<SlotsSection> {
       ),
     );
   }
+
+  // Widget _buildHourChips() {
+  //   final day = _currentDay;
+  //   if (day == null || _selectedSlotId == null) return const SizedBox.shrink();
+
+  //   TimeSlot? selectedSlot;
+  //   try {
+  //     selectedSlot = day.slots.firstWhere((s) => s.id == _selectedSlotId);
+  //   } catch (e) {
+  //     selectedSlot = null;
+  //   }
+
+  //   if (selectedSlot == null) return const SizedBox.shrink();
+
+  //   final hours = _generateHoursList(
+  //     selectedSlot.startTime,
+  //     selectedSlot.endTime,
+  //   );
+
+  //   final isSlotBooked = selectedSlot.isBooked; // ✅ تحقق إذا الـ slot محجوز
+
+  //   return Padding(
+  //     padding: const EdgeInsets.symmetric(vertical: 20),
+  //     child: Column(
+  //       crossAxisAlignment: CrossAxisAlignment.start,
+  //       children: [
+  //         const Padding(
+  //           padding: EdgeInsets.symmetric(horizontal: 16),
+  //           child: Text(
+  //             "Select Exact Hour",
+  //             style: TextStyle(
+  //               fontSize: 15,
+  //               fontWeight: FontWeight.bold,
+  //               fontFamily: 'Agency',
+  //               color: Colors.black87,
+  //             ),
+  //           ),
+  //         ),
+  //         const SizedBox(height: 12),
+  //         SizedBox(
+  //           height: 45,
+  //           child: ListView.separated(
+  //             scrollDirection: Axis.horizontal,
+  //             padding: const EdgeInsets.symmetric(horizontal: 16),
+  //             itemCount: hours.length,
+  //             separatorBuilder: (_, __) => const SizedBox(width: 10),
+  //             itemBuilder: (context, index) {
+  //               final hour = hours[index];
+  //               final isHourSelected = _selectedHour == hour;
+
+  //               return GestureDetector(
+  //                 onTap: isSlotBooked
+  //                     ? null // منع الضغط لو الـ slot محجوز
+  //                     : () {
+  //                         setState(() {
+  //                           _selectedHour = hour;
+  //                         });
+  //                         widget.onSlotSelected(day, selectedSlot!);
+  //                         widget.onHourSelected?.call(hour);
+  //                       },
+  //                 child: AnimatedContainer(
+  //                   duration: const Duration(milliseconds: 200),
+  //                   padding: const EdgeInsets.symmetric(horizontal: 20),
+  //                   alignment: Alignment.center,
+  //                   decoration: BoxDecoration(
+  //                     color: isSlotBooked
+  //                         ? Colors.grey.shade200
+  //                         : isHourSelected
+  //                         ? const Color(0xFF0861dd)
+  //                         : Colors.white,
+  //                     borderRadius: BorderRadius.circular(25),
+  //                     border: Border.all(
+  //                       color: isSlotBooked
+  //                           ? Colors.grey.shade300
+  //                           : isHourSelected
+  //                           ? const Color(0xFF0861dd)
+  //                           : Colors.grey.shade300,
+  //                       width: 1,
+  //                     ),
+  //                   ),
+  //                   child: Text(
+  //                     hour,
+  //                     style: TextStyle(
+  //                       fontFamily: 'Agency',
+  //                       fontSize: 14,
+  //                       fontWeight: isHourSelected
+  //                           ? FontWeight.bold
+  //                           : FontWeight.normal,
+  //                       color: isSlotBooked
+  //                           ? Colors.grey.shade500
+  //                           : isHourSelected
+  //                           ? Colors.white
+  //                           : Colors.black87,
+  //                       decoration: isSlotBooked
+  //                           ? TextDecoration.lineThrough
+  //                           : null, // ✅ strike-through للساعات المحجوزة
+  //                       decorationColor: isSlotBooked
+  //                           ? Colors.grey.shade500
+  //                           : null,
+  //                     ),
+  //                   ),
+  //                 ),
+  //               );
+  //             },
+  //           ),
+  //         ),
+  //       ],
+  //     ),
+  //   );
+  // }
 
   List<String> _generateHoursList(String start, String end) {
     try {

@@ -8,6 +8,7 @@ import 'package:healthcareapp_try1/Models/DetailsModel.dart/doctor_details_model
 import 'package:healthcareapp_try1/Models/DetailsModel.dart/nurse_details_model.dart';
 import 'package:healthcareapp_try1/Models/Users_Models/lab_model.dart';
 import 'package:healthcareapp_try1/Models/Users_Models/nurse_model.dart';
+import 'package:healthcareapp_try1/Pages/Booking/univrsal_paymend_page.dart';
 import 'package:intl/intl.dart';
 import 'package:healthcareapp_try1/API/user_service.dart';
 import 'package:healthcareapp_try1/Bloc/DetailsBoc/universal_details_cubit.dart';
@@ -22,6 +23,7 @@ import 'package:healthcareapp_try1/Widgets/custom_loader1.dart';
 import 'package:healthcareapp_try1/Widgets/location_open_map.dart';
 import 'package:healthcareapp_try1/Widgets/slot_widget.dart';
 import 'package:healthcareapp_try1/core/string_extension.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class ProviderDetailsPage extends StatelessWidget {
   final HealthcareProvider provider;
@@ -62,10 +64,11 @@ class _ProviderDetailsViewState extends State<_ProviderDetailsView> {
   DateTime? selectedDate;
 
   String? selectedTime;
-
+  String? selectedExactHour;
   String selectedService = "";
+  String? selectedSlotId;
 
-  List<String> selectedTests = []; // قائمة لتخزين التحاليل المختارة
+  Map<String, String> selectedTests = {}; // قائمة لتخزين التحاليل المختارة
   IconData _getProviderIcon({required bool isReady, required bool hasService}) {
     final type = widget.provider.providerType;
 
@@ -97,8 +100,7 @@ class _ProviderDetailsViewState extends State<_ProviderDetailsView> {
   bool get canProceed =>
       (widget.provider.providerType == "Lab" &&
           selectedService.isNotEmpty &&
-          selectedTests
-              .isNotEmpty) || // شرط المعمل: خدمة + تحليل واحد على الأقل
+          selectedTests.isNotEmpty) ||
       isTimeSelected;
 
   @override
@@ -230,10 +232,22 @@ class _ProviderDetailsViewState extends State<_ProviderDetailsView> {
                                 slots: data.slots,
                                 isNurse:
                                     widget.provider.providerType == "Nurse",
+                                isLab: widget.provider.providerType == "Lab",
+                                showChips: widget.provider.providerType == "Lab"
+                                    ? (selectedService.isNotEmpty &&
+                                          selectedTests.isNotEmpty)
+                                    : true,
                                 onSlotSelected: (day, slot) {
                                   setState(() {
                                     selectedDate = DateTime.parse(day.date);
                                     selectedTime = slot.startTime;
+                                    selectedSlotId = slot.id;
+                                  });
+                                },
+                                onHourSelected: (hour) {
+                                  // ✅ جديد
+                                  setState(() {
+                                    selectedExactHour = hour;
                                   });
                                 },
                               ),
@@ -294,7 +308,73 @@ class _ProviderDetailsViewState extends State<_ProviderDetailsView> {
                         // Confirm Button
                         // داخل الـ build الخاص بالـ ButtonOfAuth
                         ButtonOfAuth(
-                          onPressed: canProceed ? () {} : null,
+                          onPressed: canProceed
+                              ? () async {
+                                  final detailsState = context
+                                      .read<HealthcareDetailsCubit>()
+                                      .state;
+                                  if (detailsState is! DetailsLoaded) return;
+
+                                  // جيب الـ token من SharedPreferences
+                                  final prefs =
+                                      await SharedPreferences.getInstance();
+                                  final token = prefs.getString('token') ?? '';
+
+                                  // جيب الـ slotId
+                                  // ignore: unused_local_variable
+                                  String slotId = "";
+                                  if (detailsState.providerData
+                                      is DoctorDetailsModel) {
+                                    final allDays =
+                                        (detailsState.providerData
+                                                as DoctorDetailsModel)
+                                            .slots;
+                                    for (final day in allDays) {
+                                      for (final slot in day.slots) {
+                                        if (slot.startTime == selectedTime) {
+                                          slotId = slot.id;
+                                          break;
+                                        }
+                                      }
+                                    }
+                                  } else if (detailsState.providerData
+                                      is NurseDetailsModel) {
+                                    final allDays =
+                                        (detailsState.providerData
+                                                as NurseDetailsModel)
+                                            .slots;
+                                    for (final day in allDays) {
+                                      for (final slot in day.slots) {
+                                        if (slot.startTime == selectedTime) {
+                                          slotId = slot.id;
+                                          break;
+                                        }
+                                      }
+                                    }
+                                  }
+
+                                  if (!context.mounted) return;
+
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => BookingConfirmationPage(
+                                        provider: widget.provider,
+                                        selectedService: selectedService,
+                                        selectedDate: selectedDate!,
+                                        selectedTime:
+                                            selectedExactHour ?? selectedTime!,
+                                        slotId: selectedSlotId ?? '',
+                                        token: token,
+                                        labTestsIds: selectedTests.values
+                                            .toList(),
+                                        providerType:
+                                            widget.provider.providerType,
+                                      ),
+                                    ),
+                                  );
+                                }
+                              : null,
                           buttoncolor: canProceed ? Colors.green : Colors.grey,
                           buttonText: canProceed
                               ? "Continue to booking"
@@ -553,100 +633,46 @@ class _ProviderDetailsViewState extends State<_ProviderDetailsView> {
     );
   }
 
-  // Widget _buildFeesSection(BuildContext context, dynamic data) {
-  //   List<Widget> feeCards = [];
-  //   final provider = widget.provider; // اختصار
-
-  //   // 1. الكارت الأساسي حسب النوع
-  //   if (provider is Doctor) {
-  //     feeCards.add(
-  //       _buildFeeCard(
-  //         "Clinic Visit",
-  //         provider.mainFee,
-  //         FontAwesomeIcons.hospital,
-  //         data,
-  //       ),
-  //     );
-
-  //     // 3. خيار أونلاين إذا مسموح
-  //     if (provider.allowOnline) {
-  //       feeCards.add(const SizedBox(width: 10));
-  //       feeCards.add(
-  //         _buildFeeCard("Online", 150.0, FontAwesomeIcons.video, data),
-  //       );
-  //     }
-  //   } else if (provider is Nurse) {
-  //     // الممرض
-  //     feeCards.add(
-  //       _buildFeeCard(
-  //         "Home Visit",
-  //         provider.visitFee,
-  //         FontAwesomeIcons.house,
-  //         data,
-  //       ),
-  //     );
-
-  //     // إضافة خيار Hourly Rate
-  //     feeCards.add(const SizedBox(width: 10));
-  //     feeCards.add(
-  //       _buildFeeCard(
-  //         "Hourly Rate",
-  //         provider.hourPrice,
-  //         FontAwesomeIcons.clock,
-  //         data,
-  //       ),
-  //     );
-  //   } else if (provider is LabModel) {
-  //     // المعمل
-  //     final labDetails =
-  //         data as LabDetailsModel; // من المفترض data يكون LabDetailsModel
-  //     feeCards.add(
-  //       _buildFeeCard(
-  //         "Home Visit",
-  //         labDetails.homeVisitFee,
-  //         FontAwesomeIcons.house,
-  //         data,
-  //       ),
-  //     );
-
-  //     feeCards.add(const SizedBox(width: 10));
-  //     feeCards.add(
-  //       _buildFeeCard("Lab Visit", null, FontAwesomeIcons.flask, data),
-  //     );
-  //   } else {
-  //     // fallback لأي نوع غير متوقع
-  //     feeCards.add(
-  //       _buildFeeCard("Service", null, FontAwesomeIcons.handPointer, data),
-  //     );
-  //   }
-
-  //   return Row(children: feeCards);
-  // }
-
   Widget _buildFeesSection(BuildContext context, dynamic data) {
     List<Widget> feeCards = [];
-    final provider = widget.provider; // اختصار
+    final provider = widget.provider;
 
-    // 1. الكارت الأساسي حسب النوع
     if (provider is Doctor) {
+      final doctorDetails = data is DoctorDetailsModel ? data : null;
+
       feeCards.add(
         _buildFeeCard(
           "Clinic Visit",
-          provider.mainFee,
+          doctorDetails?.clinicFee ?? provider.mainFee,
           FontAwesomeIcons.hospital,
           data,
         ),
       );
 
-      // خيار أونلاين إذا مسموح
-      if (provider.allowOnline) {
+      if (doctorDetails?.allowHomeVisit == true) {
         feeCards.add(const SizedBox(width: 10));
         feeCards.add(
-          _buildFeeCard("Online", 150.0, FontAwesomeIcons.video, data),
+          _buildFeeCard(
+            "Home Visit",
+            doctorDetails?.homeFee,
+            FontAwesomeIcons.house,
+            data,
+          ),
+        );
+      }
+
+      if (doctorDetails?.allowOnlineConsultation == true) {
+        feeCards.add(const SizedBox(width: 10));
+        feeCards.add(
+          _buildFeeCard(
+            "Online",
+            doctorDetails?.onlineFee,
+            FontAwesomeIcons.video,
+            data,
+          ),
         );
       }
     } else if (provider is Nurse) {
-      // الممرض
       feeCards.add(
         _buildFeeCard(
           "Home Visit",
@@ -656,7 +682,6 @@ class _ProviderDetailsViewState extends State<_ProviderDetailsView> {
         ),
       );
 
-      // إضافة خيار Hourly Rate
       feeCards.add(const SizedBox(width: 10));
       feeCards.add(
         _buildFeeCard(
@@ -667,11 +692,8 @@ class _ProviderDetailsViewState extends State<_ProviderDetailsView> {
         ),
       );
     } else if (provider is LabModel) {
-      // المعمل
-      final labDetails =
-          data as LabDetailsModel; // من المفترض data يكون LabDetailsModel
+      final labDetails = data as LabDetailsModel;
 
-      // خيار Home Visit إذا متاح
       if (labDetails.homeVisitFee != null) {
         feeCards.add(
           _buildFeeCard(
@@ -688,7 +710,6 @@ class _ProviderDetailsViewState extends State<_ProviderDetailsView> {
         _buildFeeCard("Lab Visit", null, FontAwesomeIcons.flask, data),
       );
     } else {
-      // fallback لأي نوع غير متوقع
       feeCards.add(
         _buildFeeCard("Service", null, FontAwesomeIcons.handPointer, data),
       );
@@ -714,13 +735,11 @@ class _ProviderDetailsViewState extends State<_ProviderDetailsView> {
             selectedDate = null;
 
             if (type == "Home Visit" && data is LabDetailsModel) {
-              selectedTests.removeWhere((testName) {
-                // ابحث عن التحليل في القائمة الأصلية لتعرف حالته
+              selectedTests.removeWhere((testName, _) {
                 final test = data.tests.firstWhere(
                   (t) => t.name == testName,
-                  orElse: () => data.tests.first, // حماية في حال عدم الوجود
+                  orElse: () => data.tests.first,
                 );
-                // إذا كان لا يدعم المنزل، احذفه من قائمة المختارين
                 return test.isAvailableAtHome == false;
               });
             }
@@ -976,7 +995,7 @@ class _ProviderDetailsViewState extends State<_ProviderDetailsView> {
           const SizedBox(height: 10), // مسافة بين الكروت
       itemBuilder: (context, index) {
         final test = tests[index];
-        final isSelected = selectedTests.contains(test.name);
+        final isSelected = selectedTests.containsKey(test.name);
         final bool isDisabled =
             isHomeVisitSelected && (test.isAvailableAtHome == false);
 
@@ -996,7 +1015,7 @@ class _ProviderDetailsViewState extends State<_ProviderDetailsView> {
                     if (isSelected) {
                       selectedTests.remove(test.name);
                     } else {
-                      selectedTests.add(test.name);
+                      selectedTests[test.name] = test.id;
                     }
                   });
                 },

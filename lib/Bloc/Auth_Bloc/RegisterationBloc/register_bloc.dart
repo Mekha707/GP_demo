@@ -142,6 +142,8 @@ class RegisterBloc extends Bloc<RegisterEvent, RegisterState> {
 
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString('user_id', receivedId);
+        await prefs.setString('address', state.address); // ✅ أضف السطر ده
+        await prefs.setString('city', state.city);
 
         // لو السطر اللي فوق نجح وما رماش Exception، يبقى العملية تمت بنجاح
         emit(
