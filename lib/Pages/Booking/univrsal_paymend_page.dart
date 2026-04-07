@@ -1,4 +1,4 @@
-// ignore_for_file: deprecated_member_use
+// ignore_for_file: deprecated_member_use, curly_braces_in_flow_control_structures
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -621,6 +621,53 @@ class _BookingConfirmationViewState extends State<_BookingConfirmationView> {
     );
   }
 
+  // void _onConfirm(BuildContext context) {
+  //   String appointmentType;
+  //   switch (widget.selectedService) {
+  //     case "Clinic Visit":
+  //       appointmentType = "OnSiteVisit";
+  //       break;
+  //     case "Home Visit":
+  //       appointmentType = widget.providerType == "Nurse"
+  //           ? "QuickVisit" // 👈 هنا الحل
+  //           : "HomeVisit";
+  //       break;
+  //     case "Hourly Rate":
+  //       appointmentType = "HourlyStay";
+  //       break;
+  //     case "Lab Visit":
+  //       appointmentType = "OnSiteVisit";
+  //       break;
+  //     case "Online":
+  //       appointmentType = "Online";
+  //       break;
+  //     default:
+  //       appointmentType = widget.selectedService;
+  //   }
+
+  //   context.read<BookingCubit>().confirmBooking(
+  //     providerId: widget.provider.id,
+  //     slotId: widget.providerType == "Lab" ? "" : widget.slotId,
+  //     appointmentType: appointmentType,
+  //     startTime: widget.selectedTime,
+  //     token: widget.token,
+  //     providerType: widget.providerType,
+  //     notes: _notesController.text.trim().isEmpty
+  //         ? null
+  //         : _notesController.text.trim(),
+  //     address:
+  //         (widget.selectedService == "Home Visit" ||
+  //             widget.providerType == "Nurse")
+  //         ? _addressController.text.trim()
+  //         : null,
+  //     hours: widget.hours,
+
+  //     // ✅ للـ lab
+  //     labTestsIds: widget.labTestsIds,
+  //     date: widget.selectedDate.toIso8601String().split('T')[0],
+  //   );
+  // }
+
   void _onConfirm(BuildContext context) {
     String appointmentType;
     switch (widget.selectedService) {
@@ -629,7 +676,7 @@ class _BookingConfirmationViewState extends State<_BookingConfirmationView> {
         break;
       case "Home Visit":
         appointmentType = widget.providerType == "Nurse"
-            ? "QuickVisit" // 👈 هنا الحل
+            ? "QuickVisit"
             : "HomeVisit";
         break;
       case "Hourly Rate":
@@ -645,24 +692,33 @@ class _BookingConfirmationViewState extends State<_BookingConfirmationView> {
         appointmentType = widget.selectedService;
     }
 
+    // 1️⃣ تحويل الوقت لتنسيق 24 ساعة (مثال: من 9:00 AM لـ 09:00:00)
+    String rawTime = widget.selectedTime.split(' ')[0]; // ياخد الـ "9:00"
+    if (rawTime.length == 4)
+      rawTime = "0$rawTime"; // يخليها "09:00" لو كانت ساعة واحدة
+    String finalTime = "$rawTime:00"; // يضيف الثواني "09:00:00"
+
+    // ملاحظة: لو بتستخدم TimeOfDay يفضل تستخدم Format ثابت،
+    // لكن ده حل سريع بناءً على الـ String اللي ظاهر في الـ Log.
+
     context.read<BookingCubit>().confirmBooking(
+      // 2️⃣ هنا بنبعت الـ Parameters والـ Cubit هو اللي هيحطهم جوه "request"
+      // تأكد إن الـ Cubit عندك متعدل عشان يستقبلهم ويغلفهم
       providerId: widget.provider.id,
       slotId: widget.providerType == "Lab" ? "" : widget.slotId,
       appointmentType: appointmentType,
-      startTime: widget.selectedTime,
+      startTime: finalTime, // الوقت المتعدل
       token: widget.token,
       providerType: widget.providerType,
       notes: _notesController.text.trim().isEmpty
-          ? null
+          ? ""
           : _notesController.text.trim(),
       address:
           (widget.selectedService == "Home Visit" ||
               widget.providerType == "Nurse")
           ? _addressController.text.trim()
-          : null,
-      hours: widget.hours,
-
-      // ✅ للـ lab
+          : "t", // لو الـ API مش بيقبل null ابعت حرف كـ placeholder
+      hours: widget.hours ?? 1, // تأكد إنها مش null
       labTestsIds: widget.labTestsIds,
       date: widget.selectedDate.toIso8601String().split('T')[0],
     );
