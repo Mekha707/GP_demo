@@ -18,9 +18,12 @@ class BookingConfirmationPage extends StatelessWidget {
   final String selectedTime;
   final String slotId;
   final String token;
+  final double? totalFee;
+  final double? serviceFee;
   final String providerType; // ✅ جديد
   final int? hours; // ✅ للنيرس بس
   final List<String>? labTestsIds;
+  final List<String>? labTestsNames;
   const BookingConfirmationPage({
     super.key,
     required this.provider,
@@ -32,6 +35,9 @@ class BookingConfirmationPage extends StatelessWidget {
     required this.providerType,
     this.labTestsIds,
     this.hours,
+    this.totalFee,
+    this.serviceFee,
+    this.labTestsNames,
   });
 
   @override
@@ -47,7 +53,9 @@ class BookingConfirmationPage extends StatelessWidget {
         token: token,
         providerType: providerType,
         hours: hours,
+        totalFee: totalFee,
         labTestsIds: labTestsIds, // ✅ ده كان ناقص
+        labTestsNames: labTestsNames, // ✅ جديد
       ),
     );
   }
@@ -63,6 +71,8 @@ class _BookingConfirmationView extends StatefulWidget {
   final String providerType;
   final int? hours;
   final List<String>? labTestsIds;
+  final List<String>? labTestsNames;
+  final double? totalFee;
 
   const _BookingConfirmationView({
     required this.provider,
@@ -74,6 +84,8 @@ class _BookingConfirmationView extends StatefulWidget {
     required this.providerType,
     this.labTestsIds,
     this.hours,
+    this.labTestsNames,
+    this.totalFee,
   });
 
   @override
@@ -167,6 +179,8 @@ class _BookingConfirmationViewState extends State<_BookingConfirmationView> {
                 const SizedBox(height: 16),
                 _buildDetailsCard(),
                 const SizedBox(height: 16),
+                _buildLabTestsCard(),
+                const SizedBox(height: 16),
                 _buildNotesField(),
                 if (widget.selectedService == "Home Visit" ||
                     widget.providerType == "Nurse") ...[
@@ -174,6 +188,7 @@ class _BookingConfirmationViewState extends State<_BookingConfirmationView> {
                   _buildAddressField(),
                 ],
                 const SizedBox(height: 32),
+
                 _buildConfirmButton(context, state),
                 const SizedBox(height: 20),
               ],
@@ -302,6 +317,16 @@ class _BookingConfirmationViewState extends State<_BookingConfirmationView> {
                 : widget.selectedTime,
             Colors.green,
           ),
+
+          if (widget.totalFee != null && widget.totalFee! > 0) ...[
+            const Divider(height: 24),
+            _buildDetailRow(
+              FontAwesomeIcons.moneyBillWave,
+              'Total Amount',
+              '${widget.totalFee!.toStringAsFixed(2)} EGP',
+              Colors.deepPurpleAccent, // لون مميز للسعر
+            ),
+          ],
         ],
       ),
     );
@@ -523,6 +548,75 @@ class _BookingConfirmationViewState extends State<_BookingConfirmationView> {
                   fontFamily: 'Agency',
                 ),
               ),
+      ),
+    );
+  }
+
+  Widget _buildLabTestsCard() {
+    // نتحقق لو فيه أسامي تحاليل موجودة
+    if (widget.labTestsNames == null || widget.labTestsNames!.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return Container(
+      margin: const EdgeInsets.only(top: 16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Row(
+            children: [
+              Icon(Icons.biotech_rounded, color: Colors.teal, size: 22),
+              SizedBox(width: 8),
+              Text(
+                'Selected Lab Tests',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  fontFamily: 'Cotta',
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: widget.labTestsNames!.map((testName) {
+              return Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.teal.withOpacity(0.08), // خلفية خفيفة Teal
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: Colors.teal.withOpacity(0.3)),
+                ),
+                child: Text(
+                  testName,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    color: Colors.teal, // لون النص Teal
+                    fontWeight: FontWeight.w600,
+                    fontFamily: 'Agency',
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+        ],
       ),
     );
   }

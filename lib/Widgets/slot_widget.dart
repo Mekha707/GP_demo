@@ -32,11 +32,48 @@ class _SlotsSectionState extends State<SlotsSection> {
   String? _selectedHour; // لتخزين الساعة المختارة من الـ Dropdown
 
   DaySchedule? get _currentDay =>
-      widget.slots.isEmpty ? null : widget.slots[_selectedDayIndex];
+      _filteredSlots.isEmpty ? null : _filteredSlots[_selectedDayIndex];
+
+  // داخل الـ State class
+  List<DaySchedule> get _filteredSlots {
+    DateTime now = DateTime.now();
+
+    return widget.slots.where((day) {
+      DateTime selectedDate = DateTime.parse(day.date);
+      bool isToday =
+          selectedDate.year == now.year &&
+          selectedDate.month == now.month &&
+          selectedDate.day == now.day;
+
+      if (!isToday) return true; // لو يوم في المستقبل يظهر عادي
+
+      // لو اليوم هو النهاردة، بنشوف آخر معاد في الشفت
+      try {
+        // بنجيب آخر Slot في اليوم ده
+        if (day.slots.isEmpty) return false;
+
+        // بنشوف نهاية آخر Slot (زي الساعة 19:00 في مثالك)
+        String lastEndTime = day.slots.last.endTime;
+        int endHour = int.parse(lastEndTime.split(':')[0]);
+        int endMinute = int.parse(lastEndTime.split(':')[1]);
+
+        // لو الساعة الحالية أكبر من ساعة نهاية الشفت، أو نفس الساعة بس الدقائق عدت
+        if (now.hour > endHour ||
+            (now.hour == endHour && now.minute >= endMinute)) {
+          return false; // اليوم ده ملوش لزمة يظهر، الشفت خلص
+        }
+
+        return true;
+      } catch (e) {
+        return true;
+      }
+    }).toList();
+  }
 
   @override
   Widget build(BuildContext context) {
-    if (widget.slots.isEmpty) {
+    final displaySlots = _filteredSlots;
+    if (displaySlots.isEmpty) {
       return Center(
         child: Padding(
           padding: EdgeInsets.all(24),
@@ -55,7 +92,10 @@ class _SlotsSectionState extends State<SlotsSection> {
         const SizedBox(height: 16),
         _buildSlotsLabel(),
         _buildSlotsGrid(),
-        if (widget.showChips && _selectedSlotId != null) _buildHourChips(),
+        if ((widget.isLab || widget.isNurse) &&
+            widget.showChips &&
+            _selectedSlotId != null)
+          _buildHourChips(),
       ],
     );
   }
@@ -66,10 +106,10 @@ class _SlotsSectionState extends State<SlotsSection> {
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 16),
-        itemCount: widget.slots.length,
+        itemCount: _filteredSlots.length,
         separatorBuilder: (_, __) => const SizedBox(width: 8),
         itemBuilder: (context, index) {
-          final day = widget.slots[index];
+          final day = _filteredSlots[index];
           final isActive = index == _selectedDayIndex;
           final dayNumber = day.date.split('-').last; // "2025-04-10" → "10"
 
@@ -123,11 +163,42 @@ class _SlotsSectionState extends State<SlotsSection> {
   Widget _buildSlotsLabel() {
     final day = _currentDay;
     if (day == null) return const SizedBox();
-    final available = day.slots.where((s) => !s.isBooked).length;
+
+    // 1. تحديد الوقت الحالي وتاريخ اليوم المختار
+    DateTime now = DateTime.now();
+    DateTime selectedDate = DateTime.parse(day.date);
+
+    bool isToday =
+        selectedDate.year == now.year &&
+        selectedDate.month == now.month &&
+        selectedDate.day == now.day;
+
+    // 2. حساب المواعيد المتاحة (التي لم تحجز + لم يمر وقتها)
+    final availableCount = day.slots.where((slot) {
+      // أولاً: لو محجوز أصلاً مش هنحسبه
+      if (slot.isBooked && !widget.isNurse) return false;
+
+      // ثانياً: لو مش النهاردة، يبقى متاح طالما مش محجوز
+      if (!isToday) return true;
+
+      // ثالثاً: لو النهاردة، نتأكد إن الوقت لسه مجاش
+      try {
+        int endHour = int.parse(slot.endTime.split(':')[0]);
+        int endMinute = int.parse(slot.endTime.split(':')[1]);
+
+        if (endHour < now.hour) return false;
+        if (endHour == now.hour && endMinute <= now.minute) return false;
+
+        return true;
+      } catch (e) {
+        return true;
+      }
+    }).length;
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Text(
-        '$available Available',
+        '$availableCount Available', // الرقم هيتحدث بناءً على الفلترة
         style: TextStyle(
           fontSize: 14,
           color: Colors.grey.shade800,
@@ -142,15 +213,44 @@ class _SlotsSectionState extends State<SlotsSection> {
     final day = _currentDay;
     if (day == null) return const SizedBox();
 
-    // لو الممرض، نظهر فقط slots الغير محجوزة
-    final visibleSlots = day.slots;
+    DateTime now = DateTime.now();
+    // تحويل تاريخ اليوم المختار لـ DateTime للمقارنة
+    DateTime selectedDate = DateTime.parse(day.date);
+
+    bool isToday =
+        selectedDate.year == now.year &&
+        selectedDate.month == now.month &&
+        selectedDate.day == now.day;
+
+    // فلترة الـ slots:
+    // نُظهر الـ slot فقط لو:
+    // 1. اليوم مش النهاردة (يعني يوم في المستقبل).
+    // 2. أو لو النهاردة، بس وقت نهاية الـ slot لسه مجاش.
+    final visibleSlots = day.slots.where((slot) {
+      if (!isToday) return true; // لو يوم تاني أظهر كله
+
+      try {
+        // بفرض startTime أو endTime بصيغة "14:00"
+        int endHour = int.parse(slot.endTime.split(':')[0]);
+        int endMinute = int.parse(slot.endTime.split(':')[1]);
+
+        // لو ساعة النهاية أصغر من الساعة الحالية -> وقتها عدي
+        if (endHour < now.hour) return false;
+        // لو نفس الساعة، بنشوف الدقائق
+        if (endHour == now.hour && endMinute <= now.minute) return false;
+
+        return true;
+      } catch (e) {
+        return true; // في حالة خطأ الداتا نظهرها احتياطاً
+      }
+    }).toList();
 
     if (visibleSlots.isEmpty) {
       return Center(
         child: Padding(
           padding: const EdgeInsets.all(24),
           child: Text(
-            widget.isNurse ? 'No available slots' : 'No slots for this day',
+            isToday ? 'No more slots available today' : 'No slots for this day',
             style: TextStyle(color: Colors.grey.shade800, fontFamily: 'Agency'),
           ),
         ),
@@ -181,8 +281,16 @@ class _SlotsSectionState extends State<SlotsSection> {
     // ✅ لو nurse نتعامل مع كل الـ slots كأنها غير محجوزة
     final isBooked = (widget.isNurse) ? false : slot.isBooked;
 
-    String formatTime(String time) =>
-        time.length >= 5 ? time.substring(0, 5) : time;
+    String formatTime(String time) {
+      try {
+        final parts = time.split(':');
+        final hour = int.parse(parts[0]);
+        final minute = int.parse(parts[1]);
+        return TimeOfDay(hour: hour, minute: minute).format(context);
+      } catch (e) {
+        return time; // fallback لو حصل خطأ
+      }
+    }
 
     return GestureDetector(
       onTap: () {
@@ -401,6 +509,7 @@ class _SlotsSectionState extends State<SlotsSection> {
     );
   }
 
+  /// الساعات اللي محجوزة مش بتظهر
   // Widget _buildHourChips() {
   //   final day = _currentDay;
   //   if (day == null || _selectedSlotId == null) return const SizedBox.shrink();
@@ -513,19 +622,34 @@ class _SlotsSectionState extends State<SlotsSection> {
 
   List<String> _generateHoursList(String start, String end) {
     try {
-      // بفرض إن الوقت جاي بصيغة "09:00" أو "14:30"
+      // 1. الحصول على الوقت والتاريخ الحالي
+      DateTime now = DateTime.now();
+
+      // 2. الحصول على تاريخ اليوم المختار من الـ _currentDay
+      // بفرض أن date تأتي بصيغة "2025-04-07"
+      DateTime selectedDateTime = DateTime.parse(_currentDay!.date);
+
+      bool isToday =
+          selectedDateTime.year == now.year &&
+          selectedDateTime.month == now.month &&
+          selectedDateTime.day == now.day;
+
       int startHour = int.parse(start.split(':')[0]);
       int endHour = int.parse(end.split(':')[0]);
 
       List<String> hours = [];
       for (int i = startHour; i < endHour; i++) {
-        // تنسيق الساعة لشكل مقروء (مثلاً 09:00)
-        String formattedHour = "${i.toString().padLeft(2, '0')}:00";
+        // إذا كان اليوم هو "النهاردة" والساعة (i) أصغر من أو تساوي الساعة الحالية، نتخطاها
+        if (isToday && i <= now.hour) {
+          continue;
+        }
+
+        String formattedHour = TimeOfDay(hour: i, minute: 0).format(context);
         hours.add(formattedHour);
       }
       return hours;
     } catch (e) {
-      return ["Select Time"]; // Fallback في حالة وجود خطأ في الداتا
+      return [];
     }
   }
 }

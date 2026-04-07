@@ -97,11 +97,100 @@ class _ProviderDetailsViewState extends State<_ProviderDetailsView> {
 
   bool get isTimeSelected => selectedDate != null && selectedTime != null;
   final ScrollController _scrollController = ScrollController();
-  bool get canProceed =>
-      (widget.provider.providerType == "Lab" &&
-          selectedService.isNotEmpty &&
-          selectedTests.isNotEmpty) ||
-      isTimeSelected;
+  bool get canProceed {
+    if (widget.provider.providerType == "Lab") {
+      return selectedService.isNotEmpty &&
+          selectedTests.isNotEmpty &&
+          selectedDate != null &&
+          selectedTime != null;
+    } else {
+      // Doctor or Nurse
+      return selectedDate != null && selectedTime != null;
+    }
+  }
+
+  double get totalTestsPrice {
+    double total = 0.0;
+    final state = context.read<HealthcareDetailsCubit>().state;
+
+    if (state is DetailsLoaded && state.providerData is LabDetailsModel) {
+      final labData = state.providerData as LabDetailsModel;
+      final allTests = labData.tests;
+
+      // 1. حساب مجموع التحاليل المختارة
+      for (var testId in selectedTests.values) {
+        final test = allTests.firstWhere((t) => t.id == testId);
+        total += (test.price ?? 0).toDouble();
+      }
+
+      // 2. إضافة سعر الزيارة المنزلية إذا كانت هي الخدمة المختارة
+      if (selectedService == "Home Visit") {
+        // تأكد أن موديل LabDetailsModel يحتوي على حقل homeVisitPrice أو ما يشابهه
+        total += (labData.homeVisitFee ?? 0).toDouble();
+      }
+    }
+    return total;
+  }
+
+  double getSelectedServiceFee(dynamic data) {
+    if (widget.provider.providerType == "Doctor") {
+      final doctorDetails = data as DoctorDetailsModel;
+
+      switch (selectedService) {
+        case "Clinic Visit":
+          return doctorDetails.clinicFee ?? 0;
+        case "Home Visit":
+          return doctorDetails.homeFee ?? 0;
+        case "Online":
+          return doctorDetails.onlineFee ?? 0;
+        default:
+          return 0;
+      }
+    } else if (widget.provider.providerType == "Nurse") {
+      final nurseDetails = data as NurseDetailsModel; // ✅ التصحيح هنا
+
+      switch (selectedService) {
+        case "Home Visit":
+          return nurseDetails.homeVisitFee ?? 0;
+        case "Hourly Rate":
+          return nurseDetails.hourPrice ?? 0;
+        default:
+          return 0;
+      }
+    } else if (widget.provider.providerType == "Lab") {
+      final labDetails = data as LabDetailsModel;
+
+      double total = 0;
+
+      for (var testId in selectedTests.values) {
+        final test = labDetails.tests.firstWhere((t) => t.id == testId);
+        total += (test.price ?? 0).toDouble();
+      }
+
+      if (selectedService == "Home Visit") {
+        total += (labDetails.homeVisitFee ?? 0).toDouble();
+      }
+
+      return total;
+    }
+
+    return 0;
+  }
+
+  double getLabTotalFee(LabDetailsModel labData) {
+    double total = 0.0;
+
+    // سعر الخدمة المختارة (Home Visit مثلا)
+    total += (selectedService == "Home Visit" ? labData.homeVisitFee ?? 0 : 0);
+
+    // سعر التحاليل المختارة
+    for (var testId in selectedTests.values) {
+      final test = labData.tests.firstWhere((t) => t.id == testId);
+      total += (test.price ?? 0).toDouble();
+    }
+
+    return total;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -218,6 +307,21 @@ class _ProviderDetailsViewState extends State<_ProviderDetailsView> {
                         const SizedBox(height: 15),
                         _buildFeesSection(context, data),
                         const SizedBox(height: 10),
+                        // ------------------------------------------
+                        if (widget.provider.providerType == "Lab" &&
+                            selectedService.isNotEmpty)
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 10),
+                            child: Text(
+                              "Selected Service: $selectedService",
+                              style: const TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.blue,
+                                fontFamily: 'Agency',
+                              ),
+                            ),
+                          ),
 
                         if (selectedService != "" &&
                             widget.provider.providerType != "Lab" &&
@@ -263,7 +367,6 @@ class _ProviderDetailsViewState extends State<_ProviderDetailsView> {
                             children: [
                               const SizedBox(height: 10),
                               _buildSectionTitle("Available Tests"),
-                              const SizedBox(height: 10),
                               _buildTestsList(
                                 data.tests,
                               ), // سنقوم بإنشاء هذا التابع الآن
@@ -287,21 +390,260 @@ class _ProviderDetailsViewState extends State<_ProviderDetailsView> {
                           ),
                         const SizedBox(height: 15),
 
-                        // ------------------------------------------
                         if (widget.provider.providerType == "Lab" &&
-                            selectedService.isNotEmpty)
-                          Padding(
-                            padding: const EdgeInsets.only(bottom: 10),
-                            child: Text(
-                              "Selected Service: $selectedService",
-                              style: const TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.blue,
-                                fontFamily: 'Agency',
-                              ),
+                            data is LabDetailsModel) ...[
+                          _buildSectionTitle("Select Appointment Date"),
+                          const SizedBox(height: 10),
+
+                          // عرض الأيام المتاحة
+                          SizedBox(
+                            height: 80,
+                            child: ListView(
+                              scrollDirection: Axis.horizontal,
+                              children: _generateAvailableDays(data.workingDays)
+                                  .map((date) {
+                                    bool isSelected =
+                                        selectedDate?.day == date.day;
+                                    return GestureDetector(
+                                      onTap: () =>
+                                          setState(() => selectedDate = date),
+                                      child: Container(
+                                        width: 70,
+                                        margin: const EdgeInsets.only(
+                                          right: 10,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: isSelected
+                                              ? Colors.teal
+                                              : Colors.white,
+                                          borderRadius: BorderRadius.circular(
+                                            12,
+                                          ),
+                                          border: Border.all(
+                                            color: Colors.teal.withOpacity(0.2),
+                                          ),
+                                        ),
+                                        child: Column(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
+                                          children: [
+                                            Text(
+                                              DateFormat('EEE').format(date),
+                                              style: TextStyle(
+                                                color: isSelected
+                                                    ? Colors.white
+                                                    : Colors.grey,
+                                              ),
+                                            ),
+                                            Text(
+                                              date.day.toString(),
+                                              style: TextStyle(
+                                                color: isSelected
+                                                    ? Colors.white
+                                                    : Colors.black,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    );
+                                  })
+                                  .toList(),
                             ),
                           ),
+
+                          if (selectedDate != null) ...[
+                            const SizedBox(height: 20),
+                            _buildSectionTitle("Available Times"),
+                            const SizedBox(height: 10),
+
+                            // عرض الساعات المتاحة
+                            // Wrap(
+                            //   spacing: 8,
+                            //   runSpacing: 8,
+                            //   children:
+                            //       _generateTimeSlots(
+                            //         data.openingTime,
+                            //         data.closingTime,
+                            //         selectedDate,
+                            //       ).map((time) {
+                            //         bool isSelected = selectedTime == time;
+                            //         return ChoiceChip(
+                            //           label: Text(time),
+                            //           selected: isSelected,
+                            //           backgroundColor: Colors.amber,
+                            //           selectedColor: Colors.teal,
+                            //           disabledColor: Colors.grey.shade200,
+                            //           onSelected: (selected) {
+                            //             setState(() {
+                            //               selectedTime = time;
+                            //               selectedExactHour = time;
+                            //             });
+                            //           },
+                            //           labelStyle: TextStyle(
+                            //             color: isSelected
+                            //                 ? Colors.white
+                            //                 : Colors.black,
+                            //           ),
+                            //         );
+                            //       }).toList(),
+                            // ),
+                            Wrap(
+                              spacing: 8,
+                              runSpacing: 8,
+                              children:
+                                  _generateTimeSlots(
+                                    data.openingTime,
+                                    data.closingTime,
+                                    selectedDate,
+                                  ).map((time) {
+                                    bool isSelected = selectedTime == time;
+                                    return ChoiceChip(
+                                      label: Text(time),
+                                      selected: isSelected,
+                                      // 1. لون الخلفية في الحالة العادية (غير مختار)
+                                      backgroundColor: Colors.white,
+
+                                      // 2. لون الخلفية عند الاختيار
+                                      selectedColor: Colors.teal,
+
+                                      // 3. إزالة الظل أو اللون الرمادي الزائد (عشان اللون يظهر صريح)
+                                      pressElevation: 0,
+
+                                      // 4. التحكم في الحواف والبوردر
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(8),
+                                        side: BorderSide(
+                                          color: isSelected
+                                              ? Colors.teal
+                                              : Colors.grey.shade300,
+                                          width: 1,
+                                        ),
+                                      ),
+
+                                      onSelected: (selected) {
+                                        setState(() {
+                                          selectedTime = time;
+                                          selectedExactHour = time;
+                                        });
+                                      },
+                                      labelStyle: TextStyle(
+                                        color: isSelected
+                                            ? Colors.white
+                                            : Colors.black,
+                                        fontFamily: 'Agency',
+                                        fontWeight: isSelected
+                                            ? FontWeight.bold
+                                            : FontWeight.normal,
+                                      ),
+                                    );
+                                  }).toList(),
+                            ),
+                          ],
+                        ],
+
+                        SizedBox(height: 15),
+                        // --- الجزء الخاص بعرض ملخص الاختيارات والأسعار ---
+                        if (widget.provider.providerType == "Lab" &&
+                            data is LabDetailsModel) ...[
+                          const SizedBox(height: 15),
+
+                          // 1. عرض الخدمة المختارة وسعرها
+                          if (selectedService.isNotEmpty)
+                            Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 4),
+                              child: Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    "Service: $selectedService",
+                                    style: const TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600,
+                                      color: Colors.blue,
+                                      fontFamily: 'Agency',
+                                    ),
+                                  ),
+                                  Text(
+                                    selectedService == "Home Visit"
+                                        ? "\$${(data.homeVisitFee ?? 0).toStringAsFixed(2)}"
+                                        : "Free", // أو السعر الافتراضي للعيادة
+                                    style: const TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.blue,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+
+                          // 2. عرض التحاليل المختارة وأسعارها (تفصيلي)
+                          if (selectedTests.isNotEmpty) ...[
+                            const Divider(height: 20),
+                            ...selectedTests.entries.map((entry) {
+                              // البحث عن سعر التحليل من القائمة الأصلية
+                              final test = data.tests.firstWhere(
+                                (t) => t.id == entry.value,
+                              );
+                              return Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 2,
+                                ),
+                                child: Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text(
+                                      "Test: ${entry.key}",
+                                      style: const TextStyle(
+                                        fontSize: 14,
+                                        color: Colors.teal,
+                                        fontFamily: 'Agency',
+                                      ),
+                                    ),
+                                    Text(
+                                      "\$${(test.price ?? 0).toStringAsFixed(2)}",
+                                      style: const TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w500,
+                                        color: Colors.teal,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            }).toList(),
+
+                            const Divider(height: 20),
+
+                            // 3. السعر الإجمالي النهائي
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  "Total Amount (${selectedTests.length} tests)",
+                                  style: const TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                    fontFamily: 'Agency',
+                                  ),
+                                ),
+                                Text(
+                                  "\$${totalTestsPrice.toStringAsFixed(2)}",
+                                  style: const TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.orangeAccent,
+                                    fontFamily: 'Agency',
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ],
 
                         SizedBox(height: 10),
 
@@ -319,6 +661,8 @@ class _ProviderDetailsViewState extends State<_ProviderDetailsView> {
                                   final prefs =
                                       await SharedPreferences.getInstance();
                                   final token = prefs.getString('token') ?? '';
+                                  final selectedNamesList = selectedTests.keys
+                                      .toList();
 
                                   // جيب الـ slotId
                                   // ignore: unused_local_variable
@@ -365,7 +709,18 @@ class _ProviderDetailsViewState extends State<_ProviderDetailsView> {
                                         selectedTime:
                                             selectedExactHour ?? selectedTime!,
                                         slotId: selectedSlotId ?? '',
+                                        totalFee:
+                                            (widget.provider.providerType ==
+                                                "Lab"
+                                            ? getLabTotalFee(
+                                                detailsState.providerData
+                                                    as LabDetailsModel,
+                                              )
+                                            : getSelectedServiceFee(
+                                                detailsState.providerData,
+                                              )),
                                         token: token,
+                                        labTestsNames: selectedNamesList,
                                         labTestsIds: selectedTests.values
                                             .toList(),
                                         providerType:
@@ -441,6 +796,278 @@ class _ProviderDetailsViewState extends State<_ProviderDetailsView> {
     );
   }
 
+  Widget _buildTestsList(List<Test> tests) {
+    if (tests.isEmpty) return _buildEmptyState("No specific tests listed.");
+
+    final bool isHomeVisitSelected = selectedService.toLowerCase().contains(
+      "home",
+    );
+
+    return ListView.separated(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: tests.length,
+      separatorBuilder: (context, index) =>
+          const SizedBox(height: 10), // مسافة بين الكروت
+      itemBuilder: (context, index) {
+        final test = tests[index];
+        final isSelected = selectedTests.containsKey(test.name);
+        final bool isDisabled =
+            isHomeVisitSelected && (test.isAvailableAtHome == false);
+
+        return GestureDetector(
+          onTap: isDisabled
+              ? () {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        "${test.name} is not available for Home Visit",
+                      ),
+                    ),
+                  );
+                }
+              : () {
+                  setState(() {
+                    if (isSelected) {
+                      selectedTests.remove(test.name);
+                    } else {
+                      selectedTests[test.name] = test.id;
+                    }
+                  });
+                },
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: isDisabled
+                  ? Colors.grey.shade200
+                  : (isSelected ? Colors.teal.withOpacity(0.1) : Colors.white),
+              borderRadius: BorderRadius.circular(15),
+              border: Border.all(
+                color: isSelected ? Colors.teal : Colors.grey.shade200,
+                width: isSelected ? 2 : 1,
+              ),
+            ),
+            child: Row(
+              children: [
+                // أيقونة الحالة (Checkbox)
+                Icon(
+                  isSelected ? Icons.check_box : Icons.check_box_outline_blank,
+                  color: isDisabled ? Colors.grey : Colors.teal,
+                ),
+                const SizedBox(width: 12),
+
+                // تفاصيل التحليل
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        test.name,
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: isDisabled ? Colors.grey : Colors.black87,
+                          fontFamily: 'Agency',
+                          decoration: isDisabled
+                              ? TextDecoration.lineThrough
+                              : null,
+                        ),
+                      ),
+                      SizedBox(height: 10),
+                      Text(
+                        test.preRequisites,
+                        maxLines: 2,
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                          color: isDisabled ? Colors.grey : Colors.black87,
+                        ),
+                      ),
+                      if (isDisabled)
+                        const Text(
+                          "Available in Clinic only",
+                          style: TextStyle(color: Colors.red, fontSize: 12),
+                        ),
+                    ],
+                  ),
+                ),
+
+                // السعر
+                Text(
+                  "${test.price} EGP",
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 12,
+                    color: isDisabled ? Colors.grey : Colors.teal.shade700,
+                    fontFamily: 'Agency',
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildWorkingDaysSection(
+    WorkingDays workingDays,
+    String opening, // نتوقع تنسيق "09:00"
+    String closing, // نتوقع تنسيق "22:00"
+  ) {
+    final String todayName = DateFormat('EEEE').format(DateTime.now());
+    final bool isNowOpen = _isCurrentlyOpen(
+      _checkIfOpenToday(workingDays, todayName),
+      opening,
+      closing,
+    );
+
+    final days = [
+      {'name': 'Saturday', 'isOpen': workingDays.isSaturdayOpen},
+      {'name': 'Sunday', 'isOpen': workingDays.isSundayOpen},
+      {'name': 'Monday', 'isOpen': workingDays.isMondayOpen},
+      {'name': 'Tuesday', 'isOpen': workingDays.isTuesdayOpen},
+      {'name': 'Wednesday', 'isOpen': workingDays.isWednesdayOpen},
+      {'name': 'Thursday', 'isOpen': workingDays.isThursdayOpen},
+      {'name': 'Friday', 'isOpen': workingDays.isFridayOpen},
+    ];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            _buildSectionTitle("Working Hours"),
+            // Badge "Open Now"
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: isNowOpen
+                    ? Colors.green.withOpacity(0.1)
+                    : Colors.red.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(30),
+              ),
+              child: Row(
+                children: [
+                  CircleAvatar(
+                    radius: 4,
+                    backgroundColor: isNowOpen ? Colors.green : Colors.red,
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    isNowOpen ? "Open Now" : "Closed Now",
+                    style: TextStyle(
+                      color: isNowOpen
+                          ? Colors.green.shade700
+                          : Colors.red.shade700,
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: Colors.grey.shade100),
+          ),
+          child: Column(
+            children: days.map((day) {
+              final bool isOpen = day['isOpen'] as bool;
+              final String name = day['name'] as String;
+              final bool isToday = name == todayName;
+
+              return Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
+                decoration: BoxDecoration(
+                  color: isToday
+                      ? Colors.teal.withOpacity(0.1) // 👈 الأزرق الفاتح
+                      : Colors.transparent,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Row(
+                  children: [
+                    Text(
+                      name,
+                      style: TextStyle(
+                        fontWeight: isToday
+                            ? FontWeight.bold
+                            : FontWeight.normal,
+                        fontFamily: 'Agency',
+                        color: isToday ? Colors.teal : Colors.black87,
+                      ),
+                    ),
+                    const Spacer(),
+                    isOpen
+                        ? Text(
+                            "${_formatTime(opening)} - ${_formatTime(closing)}",
+                            style: const TextStyle(fontWeight: FontWeight.w500),
+                          )
+                        : const Text(
+                            "Closed",
+                            style: TextStyle(
+                              color: Colors.red,
+                              fontFamily: 'Agency',
+                            ),
+                          ),
+                  ],
+                ),
+              );
+            }).toList(),
+          ),
+        ),
+      ],
+    );
+  }
+
+  bool _checkIfOpenToday(WorkingDays workingDays, String day) {
+    switch (day) {
+      case 'Saturday':
+        return workingDays.isSaturdayOpen;
+      case 'Sunday':
+        return workingDays.isSundayOpen;
+      case 'Monday':
+        return workingDays.isMondayOpen;
+      case 'Tuesday':
+        return workingDays.isTuesdayOpen;
+      case 'Wednesday':
+        return workingDays.isWednesdayOpen;
+      case 'Thursday':
+        return workingDays.isThursdayOpen;
+      case 'Friday':
+        return workingDays.isFridayOpen;
+      default:
+        return false;
+    }
+  }
+
+  bool _isCurrentlyOpen(bool isOpenToday, String opening, String closing) {
+    if (!isOpenToday) return false;
+
+    try {
+      final now = DateTime.now();
+      // تحويل الوقت الحالي لشكل HH:mm للمقارنة
+      final String currentTimeString = DateFormat('HH:mm').format(now);
+
+      // المقارنة المباشرة بين النصوص تعمل بشكل ممتاز في تنسيق 24 ساعة
+      // مثال: "14:30" هي بعد "09:00" وقبل "22:00"
+      return currentTimeString.compareTo(opening) >= 0 &&
+          currentTimeString.compareTo(closing) <= 0;
+    } catch (e) {
+      return false;
+    }
+  }
+
   Widget _buildReviewCard(ReviewModel review) {
     return Container(
       padding: const EdgeInsets.all(16),
@@ -497,6 +1124,66 @@ class _ProviderDetailsViewState extends State<_ProviderDetailsView> {
         ],
       ),
     );
+  }
+
+  List<DateTime> _generateAvailableDays(WorkingDays workingDays) {
+    List<DateTime> availableDays = [];
+    DateTime now = DateTime.now();
+
+    for (int i = 0; i < 7; i++) {
+      DateTime date = now.add(Duration(days: i));
+      String dayName = DateFormat('EEEE').format(date);
+
+      if (_checkIfOpenToday(workingDays, dayName)) {
+        availableDays.add(date);
+      }
+    }
+    return availableDays;
+  }
+
+  List<String> _generateTimeSlots(
+    String opening,
+    String closing,
+    DateTime? selectedDate,
+  ) {
+    List<String> slots = [];
+    final format = DateFormat("HH:mm");
+    DateTime start = format.parse(opening);
+    DateTime end = format.parse(closing);
+
+    // الوقت الحالي
+    DateTime now = DateTime.now();
+    bool isToday =
+        selectedDate != null &&
+        selectedDate.year == now.year &&
+        selectedDate.month == now.month &&
+        selectedDate.day == now.day;
+
+    while (start.isBefore(end)) {
+      String timeString = DateFormat("h:mm a").format(start);
+
+      if (isToday) {
+        // تحويل الساعة الحالية من الـ Loop لـ DateTime كامل للمقارنة
+        DateTime slotDateTime = DateTime(
+          now.year,
+          now.month,
+          now.day,
+          start.hour,
+          start.minute,
+        );
+
+        // لا تضف الساعة إذا كانت قبل الوقت الحالي
+        if (slotDateTime.isAfter(now)) {
+          slots.add(timeString);
+        }
+      } else {
+        // إذا كان يوم مستقبلي، أضف كل الساعات
+        slots.add(timeString);
+      }
+
+      start = start.add(const Duration(minutes: 30));
+    }
+    return slots;
   }
 
   // دالة مساعدة بسيطة للتحقق من يوم اليوم
@@ -866,33 +1553,40 @@ class _ProviderDetailsViewState extends State<_ProviderDetailsView> {
     bool hasTests = selectedTests.isNotEmpty;
     bool hasTime = (selectedDate != null && selectedTime != null);
 
-    // منطق الجاهزية للمعمل: لازم يختار خدمة + تحليل واحد على الأقل
-    // منطق الجاهزية لغيره: لازم يختار خدمة + وقت
-    bool isReady = isLab ? (hasService && hasTests) : (hasService && hasTime);
+    // تحديث منطق الجاهزية: المعمل الآن يحتاج (خدمة + تحاليل + وقت)
+    bool isReady = isLab
+        ? (hasService && hasTests && hasTime)
+        : (hasService && hasTime);
 
-    Color mainColor = _getProviderColor(isReady, hasService);
+    Color mainColor = _getProviderColor(isReady, hasService, hasTests);
+    Color stepColor = isReady ? Colors.green : mainColor;
 
     String title;
     String subTitle;
     double progressValue;
 
     if (isLab) {
-      // --- تدفق خطوات المعمل (3 خطوات) ---
+      // --- تدفق خطوات المعمل الجديد (4 خطوات) ---
       if (isReady) {
-        title = "Step 3: Ready to Book!";
+        title = "Step 4: Ready to Book!";
         subTitle = "All set! Click 'Continue to booking'.";
         progressValue = 1.0;
+      } else if (hasService && hasTests) {
+        title = "Step 3: Select Time & Date";
+        subTitle = "Pick a suitable date for your tests.";
+        progressValue = 0.75;
+        stepColor = Colors.orange;
       } else if (hasService) {
         title = "Step 2: Select Tests";
         subTitle = "Now pick the medical tests you need.";
-        progressValue = 0.66;
+        progressValue = 0.50;
       } else {
         title = "Step 1: Select Visit Type";
         subTitle = "Choose Lab or Home visit to start.";
-        progressValue = 0.33;
+        progressValue = 0.25;
       }
     } else {
-      // --- تدفق الخطوات لغير المعامل (دكتور/ممرض) ---
+      // --- تدفق الخطوات لغير المعامل (دكتور/ممرض) كما هو ---
       if (isReady) {
         title = "Step 3: Ready to Book!";
         subTitle = "All set! Confirm your appointment.";
@@ -915,12 +1609,12 @@ class _ProviderDetailsViewState extends State<_ProviderDetailsView> {
       decoration: BoxDecoration(
         color: isReady
             ? Colors.green.withOpacity(0.08)
-            : mainColor.withOpacity(0.08),
+            : stepColor.withOpacity(0.08),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: isReady
               ? Colors.green.withOpacity(0.3)
-              : mainColor.withOpacity(0.3),
+              : stepColor.withOpacity(0.3),
           width: 1.5,
         ),
       ),
@@ -932,8 +1626,8 @@ class _ProviderDetailsViewState extends State<_ProviderDetailsView> {
               isReady
                   ? FontAwesomeIcons.circleCheck
                   : _getProviderIcon(isReady: isReady, hasService: hasService),
-              key: ValueKey(isReady),
-              color: isReady ? Colors.green : mainColor,
+              key: ValueKey(isReady || title == "Step 3: Select Time & Date"),
+              color: stepColor,
               size: 26,
             ),
           ),
@@ -948,7 +1642,7 @@ class _ProviderDetailsViewState extends State<_ProviderDetailsView> {
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 15,
-                    color: isReady ? Colors.green : mainColor,
+                    color: isReady ? Colors.green : stepColor,
                     fontFamily: 'Agency',
                   ),
                 ),
@@ -971,285 +1665,13 @@ class _ProviderDetailsViewState extends State<_ProviderDetailsView> {
                 : CircularProgressIndicator(
                     value: progressValue,
                     backgroundColor: Colors.grey.shade200,
-                    color: mainColor,
+                    color: stepColor,
                     strokeWidth: 3,
                   ),
           ),
         ],
       ),
     );
-  }
-
-  Widget _buildTestsList(List<Test> tests) {
-    if (tests.isEmpty) return _buildEmptyState("No specific tests listed.");
-
-    final bool isHomeVisitSelected = selectedService.toLowerCase().contains(
-      "home",
-    );
-
-    return ListView.separated(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      itemCount: tests.length,
-      separatorBuilder: (context, index) =>
-          const SizedBox(height: 10), // مسافة بين الكروت
-      itemBuilder: (context, index) {
-        final test = tests[index];
-        final isSelected = selectedTests.containsKey(test.name);
-        final bool isDisabled =
-            isHomeVisitSelected && (test.isAvailableAtHome == false);
-
-        return GestureDetector(
-          onTap: isDisabled
-              ? () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        "${test.name} is not available for Home Visit",
-                      ),
-                    ),
-                  );
-                }
-              : () {
-                  setState(() {
-                    if (isSelected) {
-                      selectedTests.remove(test.name);
-                    } else {
-                      selectedTests[test.name] = test.id;
-                    }
-                  });
-                },
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: isDisabled
-                  ? Colors.grey.shade200
-                  : (isSelected ? Colors.teal.withOpacity(0.1) : Colors.white),
-              borderRadius: BorderRadius.circular(15),
-              border: Border.all(
-                color: isSelected ? Colors.teal : Colors.grey.shade200,
-                width: isSelected ? 2 : 1,
-              ),
-            ),
-            child: Row(
-              children: [
-                // أيقونة الحالة (Checkbox)
-                Icon(
-                  isSelected ? Icons.check_box : Icons.check_box_outline_blank,
-                  color: isDisabled ? Colors.grey : Colors.teal,
-                ),
-                const SizedBox(width: 12),
-
-                // تفاصيل التحليل
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        test.name,
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: isDisabled ? Colors.grey : Colors.black87,
-                          fontFamily: 'Agency',
-                          decoration: isDisabled
-                              ? TextDecoration.lineThrough
-                              : null,
-                        ),
-                      ),
-                      SizedBox(height: 10),
-                      Text(
-                        test.preRequisites,
-                        maxLines: 2,
-                        style: TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
-                          color: isDisabled ? Colors.grey : Colors.black87,
-                        ),
-                      ),
-                      if (isDisabled)
-                        const Text(
-                          "Available in Clinic only",
-                          style: TextStyle(color: Colors.red, fontSize: 12),
-                        ),
-                    ],
-                  ),
-                ),
-
-                // السعر
-                Text(
-                  "${test.price} EGP",
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 12,
-                    color: isDisabled ? Colors.grey : Colors.teal.shade700,
-                    fontFamily: 'Agency',
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildWorkingDaysSection(
-    WorkingDays workingDays,
-    String opening, // نتوقع تنسيق "09:00"
-    String closing, // نتوقع تنسيق "22:00"
-  ) {
-    final String todayName = DateFormat('EEEE').format(DateTime.now());
-    final bool isNowOpen = _isCurrentlyOpen(
-      _checkIfOpenToday(workingDays, todayName),
-      opening,
-      closing,
-    );
-
-    final days = [
-      {'name': 'Saturday', 'isOpen': workingDays.isSaturdayOpen},
-      {'name': 'Sunday', 'isOpen': workingDays.isSundayOpen},
-      {'name': 'Monday', 'isOpen': workingDays.isMondayOpen},
-      {'name': 'Tuesday', 'isOpen': workingDays.isTuesdayOpen},
-      {'name': 'Wednesday', 'isOpen': workingDays.isWednesdayOpen},
-      {'name': 'Thursday', 'isOpen': workingDays.isThursdayOpen},
-      {'name': 'Friday', 'isOpen': workingDays.isFridayOpen},
-    ];
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            _buildSectionTitle("Working Hours"),
-            // Badge "Open Now"
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(
-                color: isNowOpen
-                    ? Colors.green.withOpacity(0.1)
-                    : Colors.red.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(30),
-              ),
-              child: Row(
-                children: [
-                  CircleAvatar(
-                    radius: 4,
-                    backgroundColor: isNowOpen ? Colors.green : Colors.red,
-                  ),
-                  const SizedBox(width: 6),
-                  Text(
-                    isNowOpen ? "Open Now" : "Closed Now",
-                    style: TextStyle(
-                      color: isNowOpen
-                          ? Colors.green.shade700
-                          : Colors.red.shade700,
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: Colors.grey.shade100),
-          ),
-          child: Column(
-            children: days.map((day) {
-              final bool isOpen = day['isOpen'] as bool;
-              final String name = day['name'] as String;
-              final bool isToday = name == todayName;
-
-              return Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 12,
-                ),
-                decoration: BoxDecoration(
-                  color: isToday
-                      ? Colors.teal.withOpacity(0.1) // 👈 الأزرق الفاتح
-                      : Colors.transparent,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Row(
-                  children: [
-                    Text(
-                      name,
-                      style: TextStyle(
-                        fontWeight: isToday
-                            ? FontWeight.bold
-                            : FontWeight.normal,
-                        fontFamily: 'Agency',
-                        color: isToday ? Colors.teal : Colors.black87,
-                      ),
-                    ),
-                    const Spacer(),
-                    isOpen
-                        ? Text(
-                            "${_formatTime(opening)} - ${_formatTime(closing)}",
-                            style: const TextStyle(fontWeight: FontWeight.w500),
-                          )
-                        : const Text(
-                            "Closed",
-                            style: TextStyle(
-                              color: Colors.red,
-                              fontFamily: 'Agency',
-                            ),
-                          ),
-                  ],
-                ),
-              );
-            }).toList(),
-          ),
-        ),
-      ],
-    );
-  }
-
-  bool _checkIfOpenToday(WorkingDays workingDays, String day) {
-    switch (day) {
-      case 'Saturday':
-        return workingDays.isSaturdayOpen;
-      case 'Sunday':
-        return workingDays.isSundayOpen;
-      case 'Monday':
-        return workingDays.isMondayOpen;
-      case 'Tuesday':
-        return workingDays.isTuesdayOpen;
-      case 'Wednesday':
-        return workingDays.isWednesdayOpen;
-      case 'Thursday':
-        return workingDays.isThursdayOpen;
-      case 'Friday':
-        return workingDays.isFridayOpen;
-      default:
-        return false;
-    }
-  }
-
-  bool _isCurrentlyOpen(bool isOpenToday, String opening, String closing) {
-    if (!isOpenToday) return false;
-
-    try {
-      final now = DateTime.now();
-      // تحويل الوقت الحالي لشكل HH:mm للمقارنة
-      final String currentTimeString = DateFormat('HH:mm').format(now);
-
-      // المقارنة المباشرة بين النصوص تعمل بشكل ممتاز في تنسيق 24 ساعة
-      // مثال: "14:30" هي بعد "09:00" وقبل "22:00"
-      return currentTimeString.compareTo(opening) >= 0 &&
-          currentTimeString.compareTo(closing) <= 0;
-    } catch (e) {
-      return false;
-    }
   }
 
   // 2. دالة لتحويل الوقت من 24 ساعة إلى شكل جذاب (14:00 -> 02:00 PM)
@@ -1286,9 +1708,10 @@ class _ProviderDetailsViewState extends State<_ProviderDetailsView> {
     super.dispose();
   }
 
-  Color _getProviderColor(bool isReady, bool hasService) {
+  Color _getProviderColor(bool isReady, bool hasService, bool hasTests) {
     if (isReady) return Colors.green;
     if (hasService) return Colors.blue;
+    if (hasService && hasTests) return Colors.orange;
     return const Color(0xff0861dd); // اللون الأساسي للتطبيق
   }
 }
