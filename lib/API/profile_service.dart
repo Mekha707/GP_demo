@@ -1,3 +1,5 @@
+// ignore_for_file: avoid_print
+
 import 'package:dio/dio.dart';
 import 'package:healthcareapp_try1/Models/Auth_Models/update_profile_model.dart';
 import 'package:healthcareapp_try1/Models/Booking_Models/appointment_model.dart';

@@ -132,6 +132,7 @@ class _ConfirmEmailPageState extends State<ConfirmEmailPage> {
                           const SizedBox(height: 10),
                           const Text(
                             'HealthCare Management System',
+                            textAlign: TextAlign.center,
                             style: TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.bold,

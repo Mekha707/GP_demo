@@ -2,6 +2,8 @@
 // import 'package:healthcareapp_try1/Models/Logic/paginated_list.dart';
 // import 'package:healthcareapp_try1/Models/Users_Models/doctor_model.dart';
 
+// ignore_for_file: avoid_print
+
 import 'dart:developer';
 
 import 'package:dio/dio.dart';
@@ -133,6 +135,31 @@ class UserService {
     }
   }
 
+  // Future<void> bookDoctorAppointment({
+  //   required String doctorId,
+  //   required String doctorSlotId,
+  //   required String appointmentType,
+  //   required String token,
+  //   String? notes,
+  //   String? address,
+  // }) async {
+  //   try {
+  //     await _dio.post(
+  //       'api/doctor-appointments',
+  //       data: {
+  //         'doctorId': doctorId,
+  //         'doctorSlotId': doctorSlotId,
+  //         'appointmentType': appointmentType,
+  //         'notes': notes,
+  //         'address': address,
+  //       },
+  //       options: Options(headers: {'Authorization': 'Bearer $token'}),
+  //     );
+  //   } on DioException catch (e) {
+  //     throw _handleError(e);
+  //   }
+  // }
+
   Future<void> bookDoctorAppointment({
     required String doctorId,
     required String doctorSlotId,
@@ -142,15 +169,27 @@ class UserService {
     String? address,
   }) async {
     try {
+      final Map<String, dynamic> data = {
+        'doctorId': doctorId,
+        'doctorSlotId': doctorSlotId,
+        'appointmentType': appointmentType,
+      };
+
+      // ضيف notes بس لو موجودة
+      if (notes != null && notes.isNotEmpty) {
+        data['notes'] = notes;
+      }
+
+      // ضيف address بس لو النوع محتاجه
+      if (appointmentType == "HomeVisit" &&
+          address != null &&
+          address.isNotEmpty) {
+        data['address'] = address;
+      }
+
       await _dio.post(
         'api/doctor-appointments',
-        data: {
-          'doctorId': doctorId,
-          'doctorSlotId': doctorSlotId,
-          'appointmentType': appointmentType,
-          'notes': notes,
-          'address': address,
-        },
+        data: data,
         options: Options(headers: {'Authorization': 'Bearer $token'}),
       );
     } on DioException catch (e) {
@@ -226,47 +265,38 @@ class UserService {
     required String nurseId,
     required String shiftId,
     required String serviceType,
-    required String address,
     required String token,
+    required String address,
     String? notes,
     int? hours,
     String? startTime,
   }) async {
     try {
-      await _dio.post(
+      final data = {
+        "nurseId": nurseId,
+        "shiftId": shiftId,
+        "notes": notes ?? "",
+        "startTime": startTime,
+        "address": address.trim(),
+        "serviceType": serviceType,
+        "hours": hours ?? 1,
+      };
+
+      print("REQUEST DATA: $data"); // 👈 مهم جدًا
+
+      final response = await _dio.post(
         'api/nurse-appointments',
-        data: {
-          'nurseId': nurseId,
-          'shiftId': shiftId,
-          'notes': notes,
-          'startTime': startTime,
-          'address': address,
-          'serviceType': serviceType,
-          'hours': hours,
-        },
+        data: data, // 👈 شيلنا request
         options: Options(headers: {'Authorization': 'Bearer $token'}),
       );
-    } on DioException catch (e) {
-      throw _handleError(e);
+
+      return response.data;
+    } catch (e) {
+      rethrow;
     }
   }
 
   // --- Lab Methods ---
-  // Future<PaginatedList<LabModel>> getLabs({int page = 1}) async {
-  //   try {
-  //     final response = await _dio.get(
-  //       'api/labs',
-  //       queryParameters: {'pageNumber': page},
-  //     );
-  //     return PaginatedList.fromJson(
-  //       response.data as Map<String, dynamic>,
-  //       LabModel.fromJson,
-  //     );
-  //   } on DioException catch (e) {
-  //     throw _handleError(e);
-  //   }
-  // }
-
   Future<List<LabModel>> getLabs({
     int page = 1,
     String? name,
@@ -364,17 +394,29 @@ class UserService {
     String? address,
   }) async {
     try {
+      final data = {
+        'labId': labId,
+        'date': date,
+        'appointmentType': appointmentType,
+        'startTime': startTime,
+        'labTestsIds': labTestsIds,
+      };
+
+      if (notes != null && notes.isNotEmpty) {
+        data['notes'] = notes;
+      }
+
+      // 👇 المهم هنا
+      if (appointmentType == "HomeVisit") {
+        if (address == null || address.trim().isEmpty) {
+          throw Exception("Address is required for Home Visit");
+        }
+        data['address'] = address.trim();
+      }
+
       await _dio.post(
         'api/lab-appointments',
-        data: {
-          'labId': labId,
-          'date': date,
-          'appointmentType': appointmentType,
-          'startTime': startTime,
-          'notes': notes,
-          'address': address,
-          'labTestsIds': labTestsIds,
-        },
+        data: data,
         options: Options(headers: {'Authorization': 'Bearer $token'}),
       );
     } on DioException catch (e) {

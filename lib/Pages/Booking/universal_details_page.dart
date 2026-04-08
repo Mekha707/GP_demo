@@ -8,7 +8,7 @@ import 'package:healthcareapp_try1/Models/DetailsModel.dart/doctor_details_model
 import 'package:healthcareapp_try1/Models/DetailsModel.dart/nurse_details_model.dart';
 import 'package:healthcareapp_try1/Models/Users_Models/lab_model.dart';
 import 'package:healthcareapp_try1/Models/Users_Models/nurse_model.dart';
-import 'package:healthcareapp_try1/Pages/Booking/univrsal_paymend_page.dart';
+import 'package:healthcareapp_try1/Pages/Booking/univrsal_payment_page.dart';
 import 'package:intl/intl.dart';
 import 'package:healthcareapp_try1/API/user_service.dart';
 import 'package:healthcareapp_try1/Bloc/DetailsBoc/universal_details_cubit.dart';

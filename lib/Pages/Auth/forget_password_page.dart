@@ -104,6 +104,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                             SizedBox(height: 10),
                             Text(
                               'HealthCare Management System',
+                              textAlign: TextAlign.center,
                               style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,

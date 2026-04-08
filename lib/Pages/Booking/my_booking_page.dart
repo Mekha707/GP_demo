@@ -54,206 +54,6 @@ class _MyBookingPageState extends State<MyBookingPage> {
     );
   }
 
-  // Widget _buildList(List<AppointmentModel> list, Color statusColor) {
-  //   if (list.isEmpty) {
-  //     return Center(
-  //       child: Column(
-  //         mainAxisAlignment: MainAxisAlignment.center,
-  //         children: [
-  //           Icon(
-  //             Icons.calendar_today_outlined,
-  //             size: 60,
-  //             color: Colors.grey.shade300,
-  //           ),
-  //           const SizedBox(height: 15),
-  //           Text(
-  //             "No bookings found",
-  //             style: TextStyle(color: Colors.grey.shade500, fontSize: 16),
-  //           ),
-  //         ],
-  //       ),
-  //     );
-  //   }
-
-  //   return RefreshIndicator(
-  //     onRefresh: () async {
-  //       final prefs = await SharedPreferences.getInstance();
-  //       String token = prefs.getString('token') ?? "";
-  //       await context.read<AppointmentsCubit>().getAllUserAppointments(token);
-  //     },
-  //     child: ListView.builder(
-  //       itemCount: list.length,
-  //       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
-  //       itemBuilder: (context, index) {
-  //         final item = list[index];
-  //         return Container(
-  //           margin: const EdgeInsets.only(bottom: 16),
-  //           decoration: BoxDecoration(
-  //             color: Colors.white,
-  //             borderRadius: BorderRadius.circular(20),
-  //             boxShadow: [
-  //               BoxShadow(
-  //                 color: Colors.black.withOpacity(0.04),
-  //                 blurRadius: 10,
-  //                 offset: const Offset(0, 4),
-  //               ),
-  //             ],
-  //           ),
-  //           child: Padding(
-  //             padding: const EdgeInsets.all(16.0),
-  //             child: Column(
-  //               children: [
-  //                 Row(
-  //                   crossAxisAlignment: CrossAxisAlignment.start,
-  //                   children: [
-  //                     // Provider Image with Border
-  //                     Container(
-  //                       decoration: BoxDecoration(
-  //                         shape: BoxShape.circle,
-  //                         border: Border.all(
-  //                           color: Colors.blue.shade50,
-  //                           width: 2,
-  //                         ),
-  //                       ),
-  //                       child: CircleAvatar(
-  //                         radius: 30,
-  //                         backgroundColor: Colors.grey.shade100,
-  //                         backgroundImage: NetworkImage(item.providerImage),
-  //                       ),
-  //                     ),
-  //                     const SizedBox(width: 15),
-  //                     // Information
-  //                     Expanded(
-  //                       child: Column(
-  //                         crossAxisAlignment: CrossAxisAlignment.start,
-  //                         children: [
-  //                           Row(
-  //                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
-  //                             children: [
-  //                               Text(
-  //                                 item.providerName,
-  //                                 style: const TextStyle(
-  //                                   fontWeight: FontWeight.bold,
-  //                                   fontSize: 17,
-  //                                 ),
-  //                               ),
-  //                               // Status Tag
-  //                               Container(
-  //                                 padding: const EdgeInsets.symmetric(
-  //                                   horizontal: 10,
-  //                                   vertical: 4,
-  //                                 ),
-  //                                 decoration: BoxDecoration(
-  //                                   color: statusColor.withOpacity(0.1),
-  //                                   borderRadius: BorderRadius.circular(8),
-  //                                 ),
-  //                                 child: Text(
-  //                                   item.status,
-  //                                   style: TextStyle(
-  //                                     color: statusColor,
-  //                                     fontSize: 12,
-  //                                     fontWeight: FontWeight.bold,
-  //                                   ),
-  //                                 ),
-  //                               ),
-  //                             ],
-  //                           ),
-  //                           Text(
-  //                             item.specialty ?? item.type,
-  //                             style: TextStyle(
-  //                               color: Colors.grey.shade600,
-  //                               fontSize: 14,
-  //                             ),
-  //                           ),
-  //                           const Divider(height: 25),
-  //                           Row(
-  //                             children: [
-  //                               Icon(
-  //                                 Icons.calendar_month_outlined,
-  //                                 size: 16,
-  //                                 color: Colors.blue.shade700,
-  //                               ),
-  //                               const SizedBox(width: 5),
-  //                               Text(
-  //                                 item.date,
-  //                                 style: const TextStyle(
-  //                                   fontSize: 13,
-  //                                   fontWeight: FontWeight.w500,
-  //                                 ),
-  //                               ),
-  //                               const SizedBox(width: 15),
-  //                               Icon(
-  //                                 Icons.access_time_rounded,
-  //                                 size: 16,
-  //                                 color: Colors.blue.shade700,
-  //                               ),
-  //                               const SizedBox(width: 5),
-  //                               Text(
-  //                                 item.time,
-  //                                 style: const TextStyle(
-  //                                   fontSize: 13,
-  //                                   fontWeight: FontWeight.w500,
-  //                                 ),
-  //                               ),
-  //                             ],
-  //                           ),
-  //                         ],
-  //                       ),
-  //                     ),
-  //                   ],
-  //                 ),
-  //                 const SizedBox(height: 15),
-  //                 // Bottom Section: Price & Action
-  //                 Container(
-  //                   padding: const EdgeInsets.symmetric(
-  //                     horizontal: 12,
-  //                     vertical: 10,
-  //                   ),
-  //                   decoration: BoxDecoration(
-  //                     color: Colors.grey.shade50,
-  //                     borderRadius: BorderRadius.circular(12),
-  //                   ),
-  //                   child: Row(
-  //                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
-  //                     children: [
-  //                       Row(
-  //                         children: [
-  //                           const Text(
-  //                             "Total Price: ",
-  //                             style: TextStyle(
-  //                               color: Colors.grey,
-  //                               fontSize: 13,
-  //                             ),
-  //                           ),
-  //                           Text(
-  //                             "${item.price} EGP",
-  //                             style: const TextStyle(
-  //                               fontWeight: FontWeight.bold,
-  //                               color: Colors.black,
-  //                             ),
-  //                           ),
-  //                         ],
-  //                       ),
-  //                       Text(
-  //                         item.serviceType, // "HomeVisit" or "Online"
-  //                         style: TextStyle(
-  //                           color: Colors.blue.shade800,
-  //                           fontWeight: FontWeight.w600,
-  //                           fontSize: 13,
-  //                         ),
-  //                       ),
-  //                     ],
-  //                   ),
-  //                 ),
-  //               ],
-  //             ),
-  //           ),
-  //         );
-  //       },
-  //     ),
-  //   );
-  // }
-
   Widget _buildList(List<AppointmentModel> list, Color statusColor) {
     // ... (نفس كود الـ Empty List والـ RefreshIndicator)
     if (list.isEmpty) {
@@ -544,3 +344,205 @@ class _MyBookingPageState extends State<MyBookingPage> {
     );
   }
 }
+
+
+
+  // Widget _buildList(List<AppointmentModel> list, Color statusColor) {
+  //   if (list.isEmpty) {
+  //     return Center(
+  //       child: Column(
+  //         mainAxisAlignment: MainAxisAlignment.center,
+  //         children: [
+  //           Icon(
+  //             Icons.calendar_today_outlined,
+  //             size: 60,
+  //             color: Colors.grey.shade300,
+  //           ),
+  //           const SizedBox(height: 15),
+  //           Text(
+  //             "No bookings found",
+  //             style: TextStyle(color: Colors.grey.shade500, fontSize: 16),
+  //           ),
+  //         ],
+  //       ),
+  //     );
+  //   }
+
+  //   return RefreshIndicator(
+  //     onRefresh: () async {
+  //       final prefs = await SharedPreferences.getInstance();
+  //       String token = prefs.getString('token') ?? "";
+  //       await context.read<AppointmentsCubit>().getAllUserAppointments(token);
+  //     },
+  //     child: ListView.builder(
+  //       itemCount: list.length,
+  //       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
+  //       itemBuilder: (context, index) {
+  //         final item = list[index];
+  //         return Container(
+  //           margin: const EdgeInsets.only(bottom: 16),
+  //           decoration: BoxDecoration(
+  //             color: Colors.white,
+  //             borderRadius: BorderRadius.circular(20),
+  //             boxShadow: [
+  //               BoxShadow(
+  //                 color: Colors.black.withOpacity(0.04),
+  //                 blurRadius: 10,
+  //                 offset: const Offset(0, 4),
+  //               ),
+  //             ],
+  //           ),
+  //           child: Padding(
+  //             padding: const EdgeInsets.all(16.0),
+  //             child: Column(
+  //               children: [
+  //                 Row(
+  //                   crossAxisAlignment: CrossAxisAlignment.start,
+  //                   children: [
+  //                     // Provider Image with Border
+  //                     Container(
+  //                       decoration: BoxDecoration(
+  //                         shape: BoxShape.circle,
+  //                         border: Border.all(
+  //                           color: Colors.blue.shade50,
+  //                           width: 2,
+  //                         ),
+  //                       ),
+  //                       child: CircleAvatar(
+  //                         radius: 30,
+  //                         backgroundColor: Colors.grey.shade100,
+  //                         backgroundImage: NetworkImage(item.providerImage),
+  //                       ),
+  //                     ),
+  //                     const SizedBox(width: 15),
+  //                     // Information
+  //                     Expanded(
+  //                       child: Column(
+  //                         crossAxisAlignment: CrossAxisAlignment.start,
+  //                         children: [
+  //                           Row(
+  //                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  //                             children: [
+  //                               Text(
+  //                                 item.providerName,
+  //                                 style: const TextStyle(
+  //                                   fontWeight: FontWeight.bold,
+  //                                   fontSize: 17,
+  //                                 ),
+  //                               ),
+  //                               // Status Tag
+  //                               Container(
+  //                                 padding: const EdgeInsets.symmetric(
+  //                                   horizontal: 10,
+  //                                   vertical: 4,
+  //                                 ),
+  //                                 decoration: BoxDecoration(
+  //                                   color: statusColor.withOpacity(0.1),
+  //                                   borderRadius: BorderRadius.circular(8),
+  //                                 ),
+  //                                 child: Text(
+  //                                   item.status,
+  //                                   style: TextStyle(
+  //                                     color: statusColor,
+  //                                     fontSize: 12,
+  //                                     fontWeight: FontWeight.bold,
+  //                                   ),
+  //                                 ),
+  //                               ),
+  //                             ],
+  //                           ),
+  //                           Text(
+  //                             item.specialty ?? item.type,
+  //                             style: TextStyle(
+  //                               color: Colors.grey.shade600,
+  //                               fontSize: 14,
+  //                             ),
+  //                           ),
+  //                           const Divider(height: 25),
+  //                           Row(
+  //                             children: [
+  //                               Icon(
+  //                                 Icons.calendar_month_outlined,
+  //                                 size: 16,
+  //                                 color: Colors.blue.shade700,
+  //                               ),
+  //                               const SizedBox(width: 5),
+  //                               Text(
+  //                                 item.date,
+  //                                 style: const TextStyle(
+  //                                   fontSize: 13,
+  //                                   fontWeight: FontWeight.w500,
+  //                                 ),
+  //                               ),
+  //                               const SizedBox(width: 15),
+  //                               Icon(
+  //                                 Icons.access_time_rounded,
+  //                                 size: 16,
+  //                                 color: Colors.blue.shade700,
+  //                               ),
+  //                               const SizedBox(width: 5),
+  //                               Text(
+  //                                 item.time,
+  //                                 style: const TextStyle(
+  //                                   fontSize: 13,
+  //                                   fontWeight: FontWeight.w500,
+  //                                 ),
+  //                               ),
+  //                             ],
+  //                           ),
+  //                         ],
+  //                       ),
+  //                     ),
+  //                   ],
+  //                 ),
+  //                 const SizedBox(height: 15),
+  //                 // Bottom Section: Price & Action
+  //                 Container(
+  //                   padding: const EdgeInsets.symmetric(
+  //                     horizontal: 12,
+  //                     vertical: 10,
+  //                   ),
+  //                   decoration: BoxDecoration(
+  //                     color: Colors.grey.shade50,
+  //                     borderRadius: BorderRadius.circular(12),
+  //                   ),
+  //                   child: Row(
+  //                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  //                     children: [
+  //                       Row(
+  //                         children: [
+  //                           const Text(
+  //                             "Total Price: ",
+  //                             style: TextStyle(
+  //                               color: Colors.grey,
+  //                               fontSize: 13,
+  //                             ),
+  //                           ),
+  //                           Text(
+  //                             "${item.price} EGP",
+  //                             style: const TextStyle(
+  //                               fontWeight: FontWeight.bold,
+  //                               color: Colors.black,
+  //                             ),
+  //                           ),
+  //                         ],
+  //                       ),
+  //                       Text(
+  //                         item.serviceType, // "HomeVisit" or "Online"
+  //                         style: TextStyle(
+  //                           color: Colors.blue.shade800,
+  //                           fontWeight: FontWeight.w600,
+  //                           fontSize: 13,
+  //                         ),
+  //                       ),
+  //                     ],
+  //                   ),
+  //                 ),
+  //               ],
+  //             ),
+  //           ),
+  //         );
+  //       },
+  //     ),
+  //   );
+  // }

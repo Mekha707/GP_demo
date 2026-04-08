@@ -1,10 +1,11 @@
-// ignore_for_file: deprecated_member_use, curly_braces_in_flow_control_structures
+// ignore_for_file: deprecated_member_use, curly_braces_in_flow_control_structures, avoid_print
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:healthcareapp_try1/API/user_service.dart';
-import 'package:healthcareapp_try1/Bloc/BookingBloc/doctor_booking_cubit.dart';
+import 'package:healthcareapp_try1/Bloc/BookingBloc/confirm_booking_cubit.dart';
+import 'package:healthcareapp_try1/Buttons/buttons.dart';
 import 'package:healthcareapp_try1/Pages/Booking/healtcare_provider.dart';
 import 'package:healthcareapp_try1/Widgets/custom_loader1.dart';
 import 'package:intl/intl.dart';
@@ -97,10 +98,21 @@ class _BookingConfirmationViewState extends State<_BookingConfirmationView> {
   final TextEditingController _notesController = TextEditingController();
   final TextEditingController _addressController = TextEditingController();
   String? _savedAddress;
+
+  bool get _isAddressRequired =>
+      (widget.selectedService == "Home Visit" ||
+      widget.providerType == "Nurse");
+
+  bool get _isAddressValid => _addressController.text.trim().isNotEmpty;
+
   @override
   void initState() {
     super.initState();
     _loadSavedAddress();
+
+    _addressController.addListener(() {
+      setState(() {}); // عشان يعمل rebuild للزرار
+    });
   }
 
   Future<void> _loadSavedAddress() async {
@@ -189,6 +201,15 @@ class _BookingConfirmationViewState extends State<_BookingConfirmationView> {
                 ],
                 const SizedBox(height: 32),
 
+                widget.providerType == "Nurse"
+                    ? ButtonOfAuth(
+                        onPressed: () {},
+                        fontcolor: Colors.white,
+                        buttoncolor: Colors.orangeAccent,
+                        buttonText: "Pay Now",
+                      )
+                    : SizedBox(),
+                const SizedBox(height: 10),
                 _buildConfirmButton(context, state),
                 const SizedBox(height: 20),
               ],
@@ -516,6 +537,9 @@ class _BookingConfirmationViewState extends State<_BookingConfirmationView> {
                 borderRadius: BorderRadius.circular(12),
                 borderSide: const BorderSide(color: Color(0xff0861dd)),
               ),
+              errorText: _isAddressRequired && !_isAddressValid
+                  ? "Address is required"
+                  : null,
             ),
           ),
         ],
@@ -525,11 +549,14 @@ class _BookingConfirmationViewState extends State<_BookingConfirmationView> {
 
   Widget _buildConfirmButton(BuildContext context, BookingState state) {
     final isLoading = state is BookingLoading;
+
+    final isDisabled = isLoading || (_isAddressRequired && !_isAddressValid);
+
     return SizedBox(
       width: double.infinity,
       height: 56,
       child: ElevatedButton(
-        onPressed: isLoading ? null : () => _onConfirm(context),
+        onPressed: isDisabled ? null : () => _onConfirm(context),
         style: ElevatedButton.styleFrom(
           backgroundColor: const Color(0xff0861dd),
           disabledBackgroundColor: Colors.grey.shade300,
@@ -621,63 +648,33 @@ class _BookingConfirmationViewState extends State<_BookingConfirmationView> {
     );
   }
 
-  // void _onConfirm(BuildContext context) {
-  //   String appointmentType;
-  //   switch (widget.selectedService) {
-  //     case "Clinic Visit":
-  //       appointmentType = "OnSiteVisit";
-  //       break;
-  //     case "Home Visit":
-  //       appointmentType = widget.providerType == "Nurse"
-  //           ? "QuickVisit" // 👈 هنا الحل
-  //           : "HomeVisit";
-  //       break;
-  //     case "Hourly Rate":
-  //       appointmentType = "HourlyStay";
-  //       break;
-  //     case "Lab Visit":
-  //       appointmentType = "OnSiteVisit";
-  //       break;
-  //     case "Online":
-  //       appointmentType = "Online";
-  //       break;
-  //     default:
-  //       appointmentType = widget.selectedService;
-  //   }
-
-  //   context.read<BookingCubit>().confirmBooking(
-  //     providerId: widget.provider.id,
-  //     slotId: widget.providerType == "Lab" ? "" : widget.slotId,
-  //     appointmentType: appointmentType,
-  //     startTime: widget.selectedTime,
-  //     token: widget.token,
-  //     providerType: widget.providerType,
-  //     notes: _notesController.text.trim().isEmpty
-  //         ? null
-  //         : _notesController.text.trim(),
-  //     address:
-  //         (widget.selectedService == "Home Visit" ||
-  //             widget.providerType == "Nurse")
-  //         ? _addressController.text.trim()
-  //         : null,
-  //     hours: widget.hours,
-
-  //     // ✅ للـ lab
-  //     labTestsIds: widget.labTestsIds,
-  //     date: widget.selectedDate.toIso8601String().split('T')[0],
-  //   );
-  // }
-
   void _onConfirm(BuildContext context) {
     String appointmentType;
+    bool isNurse = widget.providerType == "Nurse";
+    bool isDoctorHomeVisit =
+        widget.providerType == "Doctor" &&
+        widget.selectedService == "Home Visit";
+
+    // 1️⃣ التحقق من العنوان
+    String? address = _addressController.text.trim();
+    if ((isNurse || isDoctorHomeVisit) && address.isEmpty) {
+      if (_savedAddress != null && _savedAddress!.isNotEmpty) {
+        address = _savedAddress;
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Address is required for this service")),
+        );
+        return;
+      }
+    }
+
+    // 2️⃣ تحديد نوع الموعد (AppointmentType)
     switch (widget.selectedService) {
       case "Clinic Visit":
         appointmentType = "OnSiteVisit";
         break;
       case "Home Visit":
-        appointmentType = widget.providerType == "Nurse"
-            ? "QuickVisit"
-            : "HomeVisit";
+        appointmentType = isNurse ? "QuickVisit" : "HomeVisit";
         break;
       case "Hourly Rate":
         appointmentType = "HourlyStay";
@@ -692,33 +689,40 @@ class _BookingConfirmationViewState extends State<_BookingConfirmationView> {
         appointmentType = widget.selectedService;
     }
 
-    // 1️⃣ تحويل الوقت لتنسيق 24 ساعة (مثال: من 9:00 AM لـ 09:00:00)
-    String rawTime = widget.selectedTime.split(' ')[0]; // ياخد الـ "9:00"
-    if (rawTime.length == 4)
-      rawTime = "0$rawTime"; // يخليها "09:00" لو كانت ساعة واحدة
-    String finalTime = "$rawTime:00"; // يضيف الثواني "09:00:00"
+    // 3️⃣ تحويل الوقت بدقة لتنسيق 24 ساعة (HH:mm:ss)
+    String finalTime;
+    try {
+      // هذه السطر سيحول "5:00 PM" إلى "17:00:00"
+      // ويحول "5:00 AM" إلى "05:00:00"
+      DateTime tempTime = DateFormat.jm().parse(widget.selectedTime);
+      finalTime = DateFormat("HH:mm:ss").format(tempTime);
+    } catch (e) {
+      // إذا فشل التحويل (مثلاً الوقت مخزن أصلاً بصيغة 24 ساعة)
+      String rawTime = widget.selectedTime.split(
+        ' ',
+      )[0]; // نأخذ الجزء الأول فقط
+      if (rawTime.length == 4)
+        rawTime = "0$rawTime"; // إضافة صفر حماية مثل 5:00 تصبح 05:00
+      finalTime = rawTime.contains(':') && rawTime.length <= 5
+          ? "$rawTime:00"
+          : rawTime;
+    }
 
-    // ملاحظة: لو بتستخدم TimeOfDay يفضل تستخدم Format ثابت،
-    // لكن ده حل سريع بناءً على الـ String اللي ظاهر في الـ Log.
+    print(
+      "Final Time to be sent: $finalTime",
+    ); // تأكد من رؤية 17:00:00 في الـ Log
 
+    // 4️⃣ إرسال الطلب
     context.read<BookingCubit>().confirmBooking(
-      // 2️⃣ هنا بنبعت الـ Parameters والـ Cubit هو اللي هيحطهم جوه "request"
-      // تأكد إن الـ Cubit عندك متعدل عشان يستقبلهم ويغلفهم
       providerId: widget.provider.id,
       slotId: widget.providerType == "Lab" ? "" : widget.slotId,
       appointmentType: appointmentType,
-      startTime: finalTime, // الوقت المتعدل
+      startTime: finalTime, // التأكد أن الوقت يقع داخل الـ Shift المختار
       token: widget.token,
       providerType: widget.providerType,
-      notes: _notesController.text.trim().isEmpty
-          ? ""
-          : _notesController.text.trim(),
-      address:
-          (widget.selectedService == "Home Visit" ||
-              widget.providerType == "Nurse")
-          ? _addressController.text.trim()
-          : "t", // لو الـ API مش بيقبل null ابعت حرف كـ placeholder
-      hours: widget.hours ?? 1, // تأكد إنها مش null
+      notes: _notesController.text.trim(),
+      address: address,
+      hours: widget.hours ?? 1,
       labTestsIds: widget.labTestsIds,
       date: widget.selectedDate.toIso8601String().split('T')[0],
     );

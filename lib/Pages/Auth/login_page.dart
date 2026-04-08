@@ -90,13 +90,13 @@ class _LoginPageState extends State<LoginPage> {
                     return Form(
                       key: _formKey,
                       child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Iconheartstet(),
                           SizedBox(height: 10),
                           // Texts
                           Text(
                             'HealthCare Management System',
+                            textAlign: TextAlign.center,
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.bold,

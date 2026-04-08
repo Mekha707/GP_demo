@@ -119,6 +119,7 @@ class _VerifyOtpPageState extends State<VerifyOtpPage> {
                           const SizedBox(height: 10),
                           const Text(
                             'HealthCare Management System',
+                            textAlign: TextAlign.center,
                             style: TextStyle(
                               fontSize: 16,
                               fontFamily: 'Cotta',

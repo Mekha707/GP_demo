@@ -109,6 +109,7 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
                             const SizedBox(height: 10),
                             const Text(
                               'HealthCare Management System',
+                              textAlign: TextAlign.center,
                               style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,
